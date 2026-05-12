@@ -1,0 +1,150 @@
+/* ============================================================
+   ANIMATIONS.CSS — Keyframes, Skeletons, Transitions
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(calc(100% + 20px)); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); max-height: 80px; margin-bottom: 8px; }
+  to   { opacity: 0; transform: translateX(calc(100% + 20px)); max-height: 0; margin-bottom: 0; }
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--clr-border) 25%,
+    var(--clr-surface-2) 50%,
+    var(--clr-border) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-text  { height: 14px; border-radius: var(--radius-sm); }
+.skeleton-title { height: 22px; width: 40%; border-radius: var(--radius-sm); }
+.skeleton-card  {
+  height: 100px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--clr-border);
+}
+.skeleton-row {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--clr-border);
+}
+.skeleton-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+.skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: var(--sp-2); }
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: var(--radius-full);
+  animation: spin .6s linear infinite;
+}
+.spinner-sm { width: 14px; height: 14px; border-width: 2px; }
+.spinner-dark {
+  border-color: var(--clr-border-strong);
+  border-top-color: var(--clr-primary);
+}
+
+/* Toast container */
+.toast-container {
+  position: fixed;
+  top: var(--sp-5);
+  right: var(--sp-5);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--shadow-lg);
+  min-width: 300px;
+  max-width: 420px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  pointer-events: all;
+  animation: toastIn .3s cubic-bezier(.22,1,.36,1) forwards;
+  border-left: 3px solid var(--clr-border);
+}
+
+.toast.removing { animation: toastOut .25s ease forwards; }
+
+.toast-success { border-left-color: var(--clr-success); }
+.toast-warning { border-left-color: var(--clr-warning); }
+.toast-danger  { border-left-color: var(--clr-danger); }
+.toast-info    { border-left-color: var(--clr-info); }
+
+.toast-icon { flex-shrink: 0; margin-top: 1px; }
+.toast-icon.success { color: var(--clr-success); }
+.toast-icon.warning { color: var(--clr-warning); }
+.toast-icon.danger  { color: var(--clr-danger); }
+.toast-icon.info    { color: var(--clr-info); }
+
+.toast-body { flex: 1; }
+.toast-title { font-size: 0.875rem; font-weight: 600; color: var(--clr-text); }
+.toast-msg   { font-size: 0.8125rem; color: var(--clr-text-muted); margin-top: 2px; }
+.toast-close { color: var(--clr-text-faint); cursor: pointer; flex-shrink: 0; transition: color var(--transition-fast); }
+.toast-close:hover { color: var(--clr-text); }
+
+/* Page transitions */
+.page-enter {
+  animation: slideUp .2s ease forwards;
+}
