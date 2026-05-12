@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pupil Portal — Fahmid School</title>
+
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js" type="module"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/utilities.css" />
+  <link rel="stylesheet" href="/css/animations.css" />
+</head>
+<body>
+
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
+<div class="app-shell">
+  <div id="sidebar-container"></div>
+  <div class="main-content" id="main-content">
+    <div id="topbar-container"></div>
+    <div id="page-outlet"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { authService }  from '/js/auth.js';
+  import { buildSidebar } from '/js/components/sidebar.js';
+  import { buildTopbar }  from '/js/components/topbar.js';
+  import { router }       from '/js/router.js';
+
+  authService.onAuthChange(({ user, profile }) => {
+    if (!user || profile?.role !== 'pupil') {
+      window.location.href = '/index.html';
+    }
+  });
+
+  const NAV = [
+    {
+      label: 'My Portal',
+      items: [
+        { route: '/dashboard',   label: 'Dashboard',      icon: 'ph-squares-four' },
+        { route: '/results',     label: 'My Results',     icon: 'ph-medal' },
+        { route: '/attendance',  label: 'My Attendance',  icon: 'ph-calendar-check' },
+        { route: '/payments',    label: 'Payment History', icon: 'ph-receipt' },
+        { route: '/cbt',         label: 'CBT Exams',      icon: 'ph-monitor-play' },
+        { route: '/announcements', label: 'Announcements', icon: 'ph-megaphone' },
+      ]
+    },
+  ];
+
+  buildSidebar({ containerId: 'sidebar-container', navItems: NAV, role: 'Pupil' });
+  buildTopbar({ containerId: 'topbar-container' });
+
+  router.defineOutlet('#page-outlet');
+  router.register('/dashboard',    () => import('/js/modules/pupil/dashboard.js'));
+  router.register('/results',      () => import('/js/modules/pupil/results.js'));
+  router.register('/attendance',   () => import('/js/modules/pupil/attendance.js'));
+  router.register('/payments',     () => import('/js/modules/pupil/payments.js'));
+  router.register('/cbt',          () => import('/js/modules/pupil/cbt.js'));
+  router.register('/announcements',() => import('/js/modules/admin/announcements.js'));
+
+  if (!window.location.hash || window.location.hash === '#') window.location.hash = '/dashboard';
+  router.init();
+</script>
+
+</body>
+</html>
