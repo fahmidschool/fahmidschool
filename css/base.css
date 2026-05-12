@@ -1,0 +1,150 @@
+/* ============================================================
+   BASE.CSS — Reset, CSS Variables, Typography
+   Fahmid Nursery & Primary School
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Brand Palette */
+  --clr-primary:        #1a5f3c;
+  --clr-primary-dark:   #134a2e;
+  --clr-primary-light:  #e8f5ee;
+  --clr-accent:         #f5a623;
+  --clr-accent-light:   #fef3dc;
+
+  /* Neutrals */
+  --clr-bg:             #f4f6f8;
+  --clr-surface:        #ffffff;
+  --clr-surface-2:      #f9fafb;
+  --clr-border:         #e2e8f0;
+  --clr-border-strong:  #cbd5e1;
+
+  /* Text */
+  --clr-text:           #1a202c;
+  --clr-text-muted:     #64748b;
+  --clr-text-faint:     #94a3b8;
+  --clr-text-inverse:   #ffffff;
+
+  /* Status */
+  --clr-success:        #16a34a;
+  --clr-success-bg:     #dcfce7;
+  --clr-warning:        #d97706;
+  --clr-warning-bg:     #fef3c7;
+  --clr-danger:         #dc2626;
+  --clr-danger-bg:      #fee2e2;
+  --clr-info:           #2563eb;
+  --clr-info-bg:        #dbeafe;
+
+  /* Sidebar */
+  --sidebar-bg:         #0f3d26;
+  --sidebar-width:      260px;
+  --sidebar-collapsed:  68px;
+  --topbar-height:      64px;
+
+  /* Typography */
+  --font-display:       'DM Serif Display', serif;
+  --font-body:          'DM Sans', sans-serif;
+  --font-mono:          'Courier New', monospace;
+
+  /* Spacing scale */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* Radii */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
+  --shadow-lg:  0 10px 30px rgba(0,0,0,.10), 0 4px 10px rgba(0,0,0,.06);
+  --shadow-xl:  0 20px 50px rgba(0,0,0,.14);
+
+  /* Transitions */
+  --transition-fast:   150ms ease;
+  --transition-base:   250ms ease;
+  --transition-slow:   400ms ease;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--clr-text);
+  background: var(--clr-bg);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--clr-text);
+}
+
+h1 { font-size: 1.875rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.125rem; }
+h5 { font-size: 1rem; }
+h6 { font-size: 0.875rem; }
+
+p { line-height: 1.7; }
+
+a {
+  color: var(--clr-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover { color: var(--clr-primary-dark); }
+
+img { max-width: 100%; display: block; }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+}
+
+:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--clr-border-strong); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-text-faint); }
+
+::selection { background: var(--clr-primary-light); color: var(--clr-primary-dark); }
