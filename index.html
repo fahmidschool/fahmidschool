@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fahmid Nursery &amp; Primary School — Sign In</title>
+  <meta name="description" content="School management portal for Fahmid Nursery and Primary School" />
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js" type="module"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/utilities.css" />
+  <link rel="stylesheet" href="/css/animations.css" />
+
+  <style>
+    body { background: var(--clr-bg); }
+
+    .auth-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .auth-brand {
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-12);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-brand::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 60% 50%, rgba(26,95,60,.6) 0%, transparent 70%),
+                  radial-gradient(ellipse at 20% 80%, rgba(245,166,35,.15) 0%, transparent 50%);
+    }
+
+    .auth-brand > * { position: relative; z-index: 1; }
+
+    .auth-brand-logo {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--sp-6);
+      box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    }
+
+    .auth-brand-name {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: var(--sp-3);
+    }
+
+    .auth-brand-tagline {
+      font-size: 0.9375rem;
+      color: rgba(255,255,255,.55);
+      max-width: 280px;
+      line-height: 1.6;
+    }
+
+    .auth-brand-footer {
+      position: absolute;
+      bottom: var(--sp-6);
+      font-size: 0.75rem;
+      color: rgba(255,255,255,.25);
+    }
+
+    .auth-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-12) var(--sp-8);
+      background: var(--clr-surface);
+    }
+
+    .auth-box {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-box-title {
+      font-size: 1.625rem;
+      font-weight: 700;
+      color: var(--clr-text);
+      margin-bottom: 6px;
+    }
+
+    .auth-box-sub {
+      font-size: 0.9375rem;
+      color: var(--clr-text-muted);
+      margin-bottom: var(--sp-8);
+    }
+
+    .login-type-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      background: var(--clr-bg);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      margin-bottom: var(--sp-6);
+      border: 1px solid var(--clr-border);
+    }
+
+    .toggle-option {
+      padding: 8px;
+      text-align: center;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--clr-text-muted);
+      border-radius: calc(var(--radius-md) - 2px);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .toggle-option.active {
+      background: var(--clr-surface);
+      color: var(--clr-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .auth-footer {
+      margin-top: var(--sp-6);
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--clr-text-faint);
+    }
+
+    @media (max-width: 768px) {
+      .auth-page { grid-template-columns: 1fr; }
+      .auth-brand { display: none; }
+      .auth-panel { padding: var(--sp-8) var(--sp-5); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-page">
+
+  <!-- Brand panel -->
+  <div class="auth-brand">
+    <img src="/assets/logo.png" alt="Fahmid School Logo" class="auth-brand-logo" />
+    <h1 class="auth-brand-name">Fahmid Nursery<br>&amp; Primary School</h1>
+    <p class="auth-brand-tagline">Nurturing excellence, building futures. A complete digital learning and management platform.</p>
+    <span class="auth-brand-footer">Fahmid School Management System v1.0</span>
+  </div>
+
+  <!-- Login panel -->
+  <div class="auth-panel">
+    <div class="auth-box">
+      <h2 class="auth-box-title">Welcome back</h2>
+      <p class="auth-box-sub">Sign in to your portal to continue.</p>
+
+      <!-- Role tabs -->
+      <div class="tabs mb-6" id="role-tabs">
+        <div class="tab-btn active" data-role="admin">Administrator</div>
+        <div class="tab-btn"        data-role="teacher">Teacher</div>
+        <div class="tab-btn"        data-role="pupil">Pupil</div>
+      </div>
+
+      <!-- Pupil-only: login method toggle -->
+      <div id="pupil-toggle" style="display:none;">
+        <div class="login-type-toggle">
+          <div class="toggle-option active" data-mode="admission">Admission No.</div>
+          <div class="toggle-option"        data-mode="email">Email</div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="auth-error" class="alert alert-danger mb-5" style="display:none;">
+        <i class="ph-bold ph-warning-circle"></i>
+        <span id="auth-error-msg"></span>
+      </div>
+
+      <!-- Form -->
+      <form id="login-form" autocomplete="off" novalidate>
+
+        <div class="form-group" id="identifier-group">
+          <label class="form-label" for="identifier-input">
+            <span id="identifier-label">Email address</span>
+            <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <span class="input-icon"><i class="ph-bold ph-envelope" style="font-size:16px;"></i></span>
+            <input
+              type="text"
+              id="identifier-input"
+              class="form-control"
+              placeholder="Enter your email"
+              required
+              autocomplete="off"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password-input">
+            Password <span class="required">*</span>
+          </label>
+          <div class="input-wrapper icon-right">
+            <span class="input-icon" id="pw-toggle" style="pointer-events:all;cursor:pointer;">
+              <i class="ph-bold ph-eye" id="pw-icon" style="font-size:16px;"></i>
+            </span>
+            <input
+              type="password"
+              id="password-input"
+              class="form-control"
+              placeholder="Enter your password"
+              required
+              style="padding-left:9px;padding-right:36px;"
+            />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
+          <span id="btn-text">Sign In</span>
+          <span id="btn-spinner" class="spinner" style="display:none;"></span>
+        </button>
+
+      </form>
+
+      <div class="auth-footer">
+        Having trouble signing in? Contact the school office.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast container (injected by toast.js) -->
+
+<script type="module">
+  import { authService } from '/js/auth.js';
+  import { toast }       from '/js/toast.js';
+
+  // ── State ────────────────────────────────────────────────
+  let selectedRole = 'admin';
+  let loginMode    = 'email'; // 'email' | 'admission'
+
+  // ── Role tabs ────────────────────────────────────────────
+  document.querySelectorAll('#role-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#role-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRole = btn.dataset.role;
+      updateUI();
+    });
+  });
+
+  // ── Pupil toggle ─────────────────────────────────────────
+  document.querySelectorAll('.toggle-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      loginMode = opt.dataset.mode;
+      updateUI();
+    });
+  });
+
+  // ── Password visibility ───────────────────────────────────
+  document.getElementById('pw-toggle').addEventListener('click', () => {
+    const inp  = document.getElementById('password-input');
+    const icon = document.getElementById('pw-icon');
+    const show = inp.type === 'password';
+    inp.type   = show ? 'text' : 'password';
+    icon.className = `ph-bold ${show ? 'ph-eye-slash' : 'ph-eye'}`;
+  });
+
+  // ── Update UI per role/mode ───────────────────────────────
+  function updateUI() {
+    const isPupil       = selectedRole === 'pupil';
+    const isAdmission   = isPupil && loginMode === 'admission';
+    const identInput    = document.getElementById('identifier-input');
+    const identLabel    = document.getElementById('identifier-label');
+    const identIcon     = document.querySelector('#identifier-group .ph-bold');
+    const pupilToggle   = document.getElementById('pupil-toggle');
+
+    pupilToggle.style.display = isPupil ? 'block' : 'none';
+
+    if (isAdmission) {
+      identLabel.textContent       = 'Admission Number';
+      identInput.placeholder       = 'e.g. FPS/2024/001';
+      identIcon.className          = 'ph-bold ph-identification-badge';
+    } else {
+      identLabel.textContent       = 'Email address';
+      identInput.placeholder       = 'Enter your email';
+      identIcon.className          = 'ph-bold ph-envelope';
+    }
+
+    hideError();
+  }
+
+  // ── Error display ─────────────────────────────────────────
+  function showError(msg) {
+    const el = document.getElementById('auth-error');
+    document.getElementById('auth-error-msg').textContent = msg;
+    el.style.display = 'flex';
+  }
+  function hideError() {
+    document.getElementById('auth-error').style.display = 'none';
+  }
+
+  // ── Form submit ───────────────────────────────────────────
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+
+    const identifier = document.getElementById('identifier-input').value.trim();
+    const password   = document.getElementById('password-input').value;
+
+    if (!identifier || !password) {
+      showError('Please enter your credentials to continue.');
+      return;
+    }
+
+    // UI loading state
+    const btn     = document.getElementById('login-btn');
+    const btnText = document.getElementById('btn-text');
+    const spinner = document.getElementById('btn-spinner');
+    btn.disabled       = true;
+    btnText.textContent = 'Signing in...';
+    spinner.style.display = 'inline-block';
+
+    try {
+      const { profile } = await authService.signIn({ identifier, password });
+
+      // Role mismatch guard
+      if (profile.role !== selectedRole) {
+        await authService.logOut();
+        showError(`This account does not have ${selectedRole} access. Please select the correct role.`);
+        return;
+      }
+
+      // Redirect by role
+      const redirectMap = {
+        admin:   '/admin/index.html',
+        teacher: '/teacher/index.html',
+        pupil:   '/pupil/index.html',
+      };
+      window.location.href = redirectMap[profile.role] || '/index.html';
+
+    } catch (err) {
+      const msg = _friendlyError(err);
+      showError(msg);
+    } finally {
+      btn.disabled        = false;
+      btnText.textContent = 'Sign In';
+      spinner.style.display = 'none';
+    }
+  });
+
+  // ── Friendly error messages ───────────────────────────────
+  function _friendlyError(err) {
+    const code = err?.code || '';
+    if (code === 'auth/user-not-found'  || code === 'auth/invalid-email') return 'No account found with these credentials.';
+    if (code === 'auth/wrong-password'  || code === 'auth/invalid-credential') return 'Incorrect password. Please try again.';
+    if (code === 'auth/too-many-requests') return 'Too many sign-in attempts. Please wait and try again.';
+    if (code === 'auth/network-request-failed') return 'Network error. Please check your connection.';
+    return err?.message || 'Sign in failed. Please try again.';
+  }
+
+  // ── Redirect if already signed in ────────────────────────
+  authService.onAuthChange(({ user, profile }) => {
+    if (user && profile?.role) {
+      const map = { admin: '/admin/index.html', teacher: '/teacher/index.html', pupil: '/pupil/index.html' };
+      window.location.href = map[profile.role] || '/index.html';
+    }
+  });
+</script>
+
+</body>
+</html>
