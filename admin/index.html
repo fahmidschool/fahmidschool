@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Portal — Fahmid School</title>
+
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js" type="module"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/utilities.css" />
+  <link rel="stylesheet" href="/css/animations.css" />
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
+<!-- App Shell -->
+<div class="app-shell">
+  <div id="sidebar-container"></div>
+
+  <div class="main-content" id="main-content">
+    <div id="topbar-container"></div>
+    <!-- Dynamic page outlet -->
+    <div id="page-outlet"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { authService }   from '/js/auth.js';
+  import { buildSidebar }  from '/js/components/sidebar.js';
+  import { buildTopbar }   from '/js/components/topbar.js';
+  import { router }        from '/js/router.js';
+
+  // ── Auth guard ────────────────────────────────────────────
+  authService.onAuthChange(({ user, profile }) => {
+    if (!user || profile?.role !== 'admin') {
+      window.location.href = '/index.html';
+    }
+  });
+
+  // ── Navigation config ─────────────────────────────────────
+  const NAV = [
+    {
+      label: 'Overview',
+      items: [
+        { route: '/dashboard',     label: 'Dashboard',     icon: 'ph-squares-four' },
+        { route: '/announcements', label: 'Announcements', icon: 'ph-megaphone' },
+      ]
+    },
+    {
+      label: 'School',
+      items: [
+        { route: '/classes',       label: 'Classes',        icon: 'ph-chalkboard' },
+        { route: '/subjects',      label: 'Subjects',       icon: 'ph-books' },
+        { route: '/timetable',     label: 'Timetable',      icon: 'ph-calendar-dots' },
+        { route: '/sessions',      label: 'Sessions & Terms', icon: 'ph-calendar' },
+      ]
+    },
+    {
+      label: 'People',
+      items: [
+        { route: '/pupils',        label: 'Pupils',         icon: 'ph-student' },
+        { route: '/teachers',      label: 'Teachers',       icon: 'ph-chalkboard-teacher' },
+        { route: '/promotions',    label: 'Promotions',     icon: 'ph-arrow-up-right' },
+      ]
+    },
+    {
+      label: 'Academics',
+      items: [
+        { route: '/results',       label: 'Results',        icon: 'ph-medal' },
+        { route: '/broadsheet',    label: 'Broadsheet',     icon: 'ph-table' },
+        { route: '/attendance',    label: 'Attendance',     icon: 'ph-user-check' },
+        { route: '/cbt',           label: 'CBT Exams',      icon: 'ph-monitor-play' },
+      ]
+    },
+    {
+      label: 'Finance',
+      items: [
+        { route: '/fees',          label: 'Fee Structures', icon: 'ph-wallet' },
+        { route: '/payments',      label: 'Payments',       icon: 'ph-money' },
+        { route: '/arrears',       label: 'Arrears',        icon: 'ph-warning' },
+      ]
+    },
+    {
+      label: 'System',
+      items: [
+        { route: '/reports',       label: 'Reports',        icon: 'ph-chart-bar' },
+        { route: '/settings',      label: 'Settings',       icon: 'ph-gear' },
+      ]
+    },
+  ];
+
+  // ── Build layout ──────────────────────────────────────────
+  buildSidebar({ containerId: 'sidebar-container', navItems: NAV, role: 'Administrator' });
+  buildTopbar({ containerId: 'topbar-container' });
+
+  // ── Routes ────────────────────────────────────────────────
+  router.defineOutlet('#page-outlet');
+
+  router.register('/dashboard',     () => import('/js/modules/admin/dashboard.js'));
+  router.register('/pupils',        () => import('/js/modules/admin/pupils.js'));
+  router.register('/teachers',      () => import('/js/modules/admin/teachers.js'));
+  router.register('/classes',       () => import('/js/modules/admin/classes.js'));
+  router.register('/subjects',      () => import('/js/modules/admin/subjects.js'));
+  router.register('/results',       () => import('/js/modules/admin/results.js'));
+  router.register('/broadsheet',    () => import('/js/modules/admin/broadsheet.js'));
+  router.register('/attendance',    () => import('/js/modules/admin/attendance.js'));
+  router.register('/fees',          () => import('/js/modules/admin/fees.js'));
+  router.register('/payments',      () => import('/js/modules/admin/payments.js'));
+  router.register('/arrears',       () => import('/js/modules/admin/arrears.js'));
+  router.register('/sessions',      () => import('/js/modules/admin/sessions.js'));
+  router.register('/promotions',    () => import('/js/modules/admin/promotions.js'));
+  router.register('/cbt',           () => import('/js/modules/admin/cbt.js'));
+  router.register('/timetable',     () => import('/js/modules/admin/timetable.js'));
+  router.register('/announcements', () => import('/js/modules/admin/announcements.js'));
+  router.register('/reports',       () => import('/js/modules/admin/reports.js'));
+  router.register('/settings',      () => import('/js/modules/admin/settings.js'));
+
+  // Default route
+  if (!window.location.hash || window.location.hash === '#') {
+    window.location.hash = '/dashboard';
+  }
+
+  router.init();
+</script>
+
+</body>
+</html>
