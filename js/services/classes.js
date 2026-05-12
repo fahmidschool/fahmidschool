@@ -1,0 +1,38 @@
+// ============================================================
+// classes.js — Class service layer
+// ============================================================
+
+import {
+  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+  query, orderBy, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+import { db }        from '../firebase.js';
+import { logAction } from './audit.js';
+
+const COL = 'classes';
+
+export async function getAllClasses() {
+  const snap = await getDocs(query(collection(db, COL), orderBy('order')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function getClass(id) {
+  const snap = await getDoc(doc(db, COL, id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function createClass(data) {
+  const ref = await addDoc(collection(db, COL), { ...data, createdAt: serverTimestamp() });
+  await logAction('class_created', { classId: ref.id, name: data.name });
+  return ref.id;
+}
+
+export async function updateClass(id, data) {
+  await updateDoc(doc(db, COL, id), { ...data, updatedAt: serverTimestamp() });
+}
+
+export async function deleteClass(id) {
+  await deleteDoc(doc(db, COL, id));
+  await logAction('class_deleted', { classId: id });
+}
