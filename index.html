@@ -44,8 +44,9 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(ellipse at 60% 50%, rgba(26,95,60,.6) 0%, transparent 70%),
-                  radial-gradient(ellipse at 20% 80%, rgba(245,166,35,.15) 0%, transparent 50%);
+      background:
+        radial-gradient(ellipse at 60% 50%, rgba(26,95,60,.6) 0%, transparent 70%),
+        radial-gradient(ellipse at 20% 80%, rgba(245,166,35,.15) 0%, transparent 50%);
     }
 
     .auth-brand > * { position: relative; z-index: 1; }
@@ -127,6 +128,7 @@
       border-radius: calc(var(--radius-md) - 2px);
       cursor: pointer;
       transition: all var(--transition-fast);
+      user-select: none;
     }
 
     .toggle-option.active {
@@ -141,6 +143,26 @@
       font-size: 0.8125rem;
       color: var(--clr-text-faint);
     }
+
+    /* Tab buttons */
+    .role-tab {
+      padding: var(--sp-3) var(--sp-4);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--clr-text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: var(--font-body);
+    }
+    .role-tab:hover  { color: var(--clr-text); }
+    .role-tab.active { color: var(--clr-primary); border-bottom-color: var(--clr-primary); }
 
     @media (max-width: 768px) {
       .auth-page { grid-template-columns: 1fr; }
@@ -157,54 +179,71 @@
   <div class="auth-brand">
     <img src="/assets/logo.png" alt="Fahmid School Logo" class="auth-brand-logo" />
     <h1 class="auth-brand-name">Fahmid Nursery<br>&amp; Primary School</h1>
-    <p class="auth-brand-tagline">Nurturing excellence, building futures. A complete digital learning and management platform.</p>
+    <p class="auth-brand-tagline">
+      Nurturing excellence, building futures. A complete digital learning and management platform.
+    </p>
     <span class="auth-brand-footer">Fahmid School Management System v1.0</span>
   </div>
 
   <!-- Login panel -->
   <div class="auth-panel">
     <div class="auth-box">
+
       <h2 class="auth-box-title">Welcome back</h2>
       <p class="auth-box-sub">Sign in to your portal to continue.</p>
 
       <!-- Role tabs -->
-      <div class="tabs mb-6" id="role-tabs">
-        <div class="tab-btn active" data-role="admin">Administrator</div>
-        <div class="tab-btn"        data-role="teacher">Teacher</div>
-        <div class="tab-btn"        data-role="pupil">Pupil</div>
+      <div style="display:flex;gap:2px;border-bottom:2px solid var(--clr-border);margin-bottom:var(--sp-6);">
+        <button type="button" class="role-tab active" data-role="admin">Administrator</button>
+        <button type="button" class="role-tab"        data-role="teacher">Teacher</button>
+        <button type="button" class="role-tab"        data-role="pupil">Pupil</button>
       </div>
 
-      <!-- Pupil-only: login method toggle -->
-      <div id="pupil-toggle" style="display:none;">
+      <!-- Pupil-only login method toggle -->
+      <div id="pupil-toggle" style="display:none;margin-bottom:var(--sp-5);">
         <div class="login-type-toggle">
           <div class="toggle-option active" data-mode="admission">Admission No.</div>
           <div class="toggle-option"        data-mode="email">Email</div>
         </div>
       </div>
 
-      <!-- Error -->
-      <div id="auth-error" class="alert alert-danger mb-5" style="display:none;">
-        <i class="ph-bold ph-warning-circle"></i>
+      <!-- Error alert -->
+      <div id="auth-error"
+           class="alert alert-danger"
+           style="display:none;margin-bottom:var(--sp-5);">
+        <i class="ph-bold ph-warning-circle" style="font-size:16px;flex-shrink:0;"></i>
         <span id="auth-error-msg"></span>
       </div>
 
-      <!-- Form -->
-      <form id="login-form" autocomplete="off" novalidate>
+      <!-- Config warning (shows if Firebase not configured) -->
+      <div id="config-warning"
+           class="alert alert-warning"
+           style="display:none;margin-bottom:var(--sp-5);">
+        <i class="ph-bold ph-warning" style="font-size:16px;flex-shrink:0;"></i>
+        <span>Firebase is not configured yet. Open <strong>js/firebase.js</strong> and replace the placeholder values with your actual Firebase project config.</span>
+      </div>
 
-        <div class="form-group" id="identifier-group">
+      <!-- Login fields — NOT a form element -->
+      <div id="login-fields">
+
+        <div class="form-group">
           <label class="form-label" for="identifier-input">
             <span id="identifier-label">Email address</span>
             <span class="required">*</span>
           </label>
           <div class="input-wrapper">
-            <span class="input-icon"><i class="ph-bold ph-envelope" style="font-size:16px;"></i></span>
+            <span class="input-icon" id="identifier-icon">
+              <i class="ph-bold ph-envelope" style="font-size:16px;"></i>
+            </span>
             <input
               type="text"
               id="identifier-input"
               class="form-control"
               placeholder="Enter your email"
-              required
               autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
             />
           </div>
         </div>
@@ -214,174 +253,265 @@
             Password <span class="required">*</span>
           </label>
           <div class="input-wrapper icon-right">
-            <span class="input-icon" id="pw-toggle" style="pointer-events:all;cursor:pointer;">
-              <i class="ph-bold ph-eye" id="pw-icon" style="font-size:16px;"></i>
+            <span class="input-icon"
+                  id="pw-toggle"
+                  style="pointer-events:all;cursor:pointer;z-index:2;">
+              <i class="ph-bold ph-eye" id="pw-eye-icon" style="font-size:16px;"></i>
             </span>
             <input
               type="password"
               id="password-input"
               class="form-control"
               placeholder="Enter your password"
-              required
-              style="padding-left:9px;padding-right:36px;"
+              autocomplete="current-password"
+              style="padding-left:12px;padding-right:40px;"
             />
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-btn">
-          <span id="btn-text">Sign In</span>
-          <span id="btn-spinner" class="spinner" style="display:none;"></span>
+        <!-- Sign in button — type="button" is critical -->
+        <button
+          type="button"
+          class="btn btn-primary btn-block btn-lg"
+          id="login-btn"
+          style="margin-top:var(--sp-2);">
+          <span id="btn-label">Sign In</span>
+          <span id="btn-spinner" class="spinner" style="display:none;border-top-color:#fff;"></span>
         </button>
 
-      </form>
+      </div>
+      <!-- end login-fields -->
 
       <div class="auth-footer">
         Having trouble signing in? Contact the school office.
       </div>
+
     </div>
   </div>
 
 </div>
 
-<!-- Toast container (injected by toast.js) -->
-
 <script type="module">
-  import { authService } from '/js/auth.js';
-  import { toast }       from '/js/toast.js';
 
-  // ── State ────────────────────────────────────────────────
-  let selectedRole = 'admin';
-  let loginMode    = 'email'; // 'email' | 'admission'
+  // ── Wait for DOM ─────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
 
-  // ── Role tabs ────────────────────────────────────────────
-  document.querySelectorAll('#role-tabs .tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#role-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedRole = btn.dataset.role;
-      updateUI();
+    // ── State ──────────────────────────────────────────────
+    let selectedRole = 'admin';
+    let loginMode    = 'email'; // 'email' | 'admission'
+    let isBusy       = false;
+
+    // ── Element refs ───────────────────────────────────────
+    const loginBtn        = document.getElementById('login-btn');
+    const btnLabel        = document.getElementById('btn-label');
+    const btnSpinner      = document.getElementById('btn-spinner');
+    const identifierInput = document.getElementById('identifier-input');
+    const passwordInput   = document.getElementById('password-input');
+    const identifierLabel = document.getElementById('identifier-label');
+    const identifierIcon  = document.getElementById('identifier-icon');
+    const errorBox        = document.getElementById('auth-error');
+    const errorMsg        = document.getElementById('auth-error-msg');
+    const configWarning   = document.getElementById('config-warning');
+    const pupilToggle     = document.getElementById('pupil-toggle');
+    const pwToggle        = document.getElementById('pw-toggle');
+    const pwEyeIcon       = document.getElementById('pw-eye-icon');
+
+    // ── Role tab switching ──────────────────────────────────
+    document.querySelectorAll('.role-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        selectedRole = tab.dataset.role;
+        updateUI();
+        hideError();
+      });
     });
-  });
 
-  // ── Pupil toggle ─────────────────────────────────────────
-  document.querySelectorAll('.toggle-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      document.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
-      opt.classList.add('active');
-      loginMode = opt.dataset.mode;
-      updateUI();
+    // ── Pupil mode toggle ───────────────────────────────────
+    document.querySelectorAll('.toggle-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.toggle-option').forEach(o => o.classList.remove('active'));
+        opt.classList.add('active');
+        loginMode = opt.dataset.mode;
+        updateUI();
+        hideError();
+      });
     });
-  });
 
-  // ── Password visibility ───────────────────────────────────
-  document.getElementById('pw-toggle').addEventListener('click', () => {
-    const inp  = document.getElementById('password-input');
-    const icon = document.getElementById('pw-icon');
-    const show = inp.type === 'password';
-    inp.type   = show ? 'text' : 'password';
-    icon.className = `ph-bold ${show ? 'ph-eye-slash' : 'ph-eye'}`;
-  });
+    // ── Password visibility ─────────────────────────────────
+    pwToggle.addEventListener('click', () => {
+      const show     = passwordInput.type === 'password';
+      passwordInput.type    = show ? 'text' : 'password';
+      pwEyeIcon.className   = `ph-bold ${show ? 'ph-eye-slash' : 'ph-eye'}`;
+    });
 
-  // ── Update UI per role/mode ───────────────────────────────
-  function updateUI() {
-    const isPupil       = selectedRole === 'pupil';
-    const isAdmission   = isPupil && loginMode === 'admission';
-    const identInput    = document.getElementById('identifier-input');
-    const identLabel    = document.getElementById('identifier-label');
-    const identIcon     = document.querySelector('#identifier-group .ph-bold');
-    const pupilToggle   = document.getElementById('pupil-toggle');
+    // ── Enter key triggers login ────────────────────────────
+    identifierInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+    });
+    passwordInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); doLogin(); }
+    });
 
-    pupilToggle.style.display = isPupil ? 'block' : 'none';
+    // ── Sign in button click ────────────────────────────────
+    loginBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      doLogin();
+    });
 
-    if (isAdmission) {
-      identLabel.textContent       = 'Admission Number';
-      identInput.placeholder       = 'e.g. FPS/2024/001';
-      identIcon.className          = 'ph-bold ph-identification-badge';
-    } else {
-      identLabel.textContent       = 'Email address';
-      identInput.placeholder       = 'Enter your email';
-      identIcon.className          = 'ph-bold ph-envelope';
+    // ── Update UI when role or mode changes ─────────────────
+    function updateUI() {
+      const isPupil      = selectedRole === 'pupil';
+      const isAdmission  = isPupil && loginMode === 'admission';
+
+      pupilToggle.style.display = isPupil ? 'block' : 'none';
+
+      if (isAdmission) {
+        identifierLabel.textContent = 'Admission Number';
+        identifierInput.placeholder = 'e.g. FPS/2024/001';
+        identifierIcon.innerHTML    = `<i class="ph-bold ph-identification-badge" style="font-size:16px;"></i>`;
+        identifierInput.type        = 'text';
+      } else {
+        identifierLabel.textContent = 'Email address';
+        identifierInput.placeholder = 'Enter your email';
+        identifierIcon.innerHTML    = `<i class="ph-bold ph-envelope" style="font-size:16px;"></i>`;
+        identifierInput.type        = 'email';
+      }
     }
 
-    hideError();
-  }
-
-  // ── Error display ─────────────────────────────────────────
-  function showError(msg) {
-    const el = document.getElementById('auth-error');
-    document.getElementById('auth-error-msg').textContent = msg;
-    el.style.display = 'flex';
-  }
-  function hideError() {
-    document.getElementById('auth-error').style.display = 'none';
-  }
-
-  // ── Form submit ───────────────────────────────────────────
-  document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideError();
-
-    const identifier = document.getElementById('identifier-input').value.trim();
-    const password   = document.getElementById('password-input').value;
-
-    if (!identifier || !password) {
-      showError('Please enter your credentials to continue.');
-      return;
+    // ── Error helpers ───────────────────────────────────────
+    function showError(msg) {
+      errorMsg.textContent  = msg;
+      errorBox.style.display = 'flex';
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    // UI loading state
-    const btn     = document.getElementById('login-btn');
-    const btnText = document.getElementById('btn-text');
-    const spinner = document.getElementById('btn-spinner');
-    btn.disabled       = true;
-    btnText.textContent = 'Signing in...';
-    spinner.style.display = 'inline-block';
+    function hideError() {
+      errorBox.style.display = 'none';
+      errorMsg.textContent   = '';
+    }
 
-    try {
-      const { profile } = await authService.signIn({ identifier, password });
+    // ── Loading state helpers ───────────────────────────────
+    function setLoading(loading) {
+      isBusy               = loading;
+      loginBtn.disabled    = loading;
+      btnLabel.textContent = loading ? 'Signing in...' : 'Sign In';
+      btnSpinner.style.display = loading ? 'inline-block' : 'none';
+      identifierInput.disabled = loading;
+      passwordInput.disabled   = loading;
+    }
 
-      // Role mismatch guard
-      if (profile.role !== selectedRole) {
-        await authService.logOut();
-        showError(`This account does not have ${selectedRole} access. Please select the correct role.`);
+    // ── Main login function ─────────────────────────────────
+    async function doLogin() {
+      if (isBusy) return;
+
+      hideError();
+
+      const identifier = identifierInput.value.trim();
+      const password   = passwordInput.value;
+
+      if (!identifier) {
+        showError('Please enter your email or admission number.');
+        identifierInput.focus();
         return;
       }
 
-      // Redirect by role
-      const redirectMap = {
-        admin:   '/admin/index.html',
-        teacher: '/teacher/index.html',
-        pupil:   '/pupil/index.html',
+      if (!password) {
+        showError('Please enter your password.');
+        passwordInput.focus();
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        // Dynamically import auth service only when needed
+        const { authService } = await import('/js/auth.js');
+        const { profile }     = await authService.signIn({ identifier, password });
+
+        // Role mismatch check
+        if (profile.role !== selectedRole) {
+          await authService.logOut();
+          showError(
+            `This account does not have ${selectedRole} access. ` +
+            `Please select the correct role tab above.`
+          );
+          setLoading(false);
+          return;
+        }
+
+        // Redirect by role
+        const redirectMap = {
+          admin:   '/admin/index.html',
+          teacher: '/teacher/index.html',
+          pupil:   '/pupil/index.html',
+        };
+
+        window.location.href = redirectMap[profile.role] || '/index.html';
+
+      } catch (err) {
+        setLoading(false);
+        showError(friendlyError(err));
+        console.error('Login error:', err);
+      }
+    }
+
+    // ── Friendly Firebase error messages ────────────────────
+    function friendlyError(err) {
+      const code = err?.code || '';
+      const map  = {
+        'auth/user-not-found':         'No account found with these credentials.',
+        'auth/wrong-password':         'Incorrect password. Please try again.',
+        'auth/invalid-credential':     'Incorrect email or password. Please try again.',
+        'auth/invalid-email':          'The email address is not valid.',
+        'auth/user-disabled':          'This account has been disabled. Contact the administrator.',
+        'auth/too-many-requests':      'Too many failed attempts. Please wait a few minutes and try again.',
+        'auth/network-request-failed': 'Network error. Please check your internet connection.',
+        'auth/operation-not-allowed':  'Email sign-in is not enabled. Contact the administrator.',
       };
-      window.location.href = redirectMap[profile.role] || '/index.html';
-
-    } catch (err) {
-      const msg = _friendlyError(err);
-      showError(msg);
-    } finally {
-      btn.disabled        = false;
-      btnText.textContent = 'Sign In';
-      spinner.style.display = 'none';
+      return map[code] || err?.message || 'Sign in failed. Please try again.';
     }
-  });
 
-  // ── Friendly error messages ───────────────────────────────
-  function _friendlyError(err) {
-    const code = err?.code || '';
-    if (code === 'auth/user-not-found'  || code === 'auth/invalid-email') return 'No account found with these credentials.';
-    if (code === 'auth/wrong-password'  || code === 'auth/invalid-credential') return 'Incorrect password. Please try again.';
-    if (code === 'auth/too-many-requests') return 'Too many sign-in attempts. Please wait and try again.';
-    if (code === 'auth/network-request-failed') return 'Network error. Please check your connection.';
-    return err?.message || 'Sign in failed. Please try again.';
-  }
-
-  // ── Redirect if already signed in ────────────────────────
-  authService.onAuthChange(({ user, profile }) => {
-    if (user && profile?.role) {
-      const map = { admin: '/admin/index.html', teacher: '/teacher/index.html', pupil: '/pupil/index.html' };
-      window.location.href = map[profile.role] || '/index.html';
+    // ── Check Firebase config on load ───────────────────────
+    async function checkConfig() {
+      try {
+        const mod = await import('/js/firebase.js');
+        // If auth is not initialized it means config is placeholder
+        if (!mod.auth) {
+          configWarning.style.display = 'flex';
+          loginBtn.disabled = true;
+        }
+      } catch {
+        configWarning.style.display = 'flex';
+        loginBtn.disabled = true;
+      }
     }
-  });
+
+    // ── Auto-redirect if already signed in ──────────────────
+    async function checkExistingSession() {
+      try {
+        const { authService } = await import('/js/auth.js');
+        authService.onAuthChange(({ user, profile }) => {
+          if (user && profile?.role) {
+            const map = {
+              admin:   '/admin/index.html',
+              teacher: '/teacher/index.html',
+              pupil:   '/pupil/index.html',
+            };
+            window.location.href = map[profile.role] || '/index.html';
+          }
+        });
+      } catch { /* firebase not configured yet */ }
+    }
+
+    // ── Init ────────────────────────────────────────────────
+    checkConfig();
+    checkExistingSession();
+    identifierInput.focus();
+
+  }); // end DOMContentLoaded
+
 </script>
 
 </body>
