@@ -29,6 +29,19 @@ export default async function render(outlet) {
     const revenue  = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
 
     outlet.innerHTML = `
+      <style>
+        .dash-two-col {
+          display: grid;
+          grid-template-columns: 1fr 380px;
+          gap: var(--sp-5);
+        }
+        @media (max-width: 768px) {
+          .dash-two-col {
+            grid-template-columns: 1fr;
+          }
+        }
+      </style>
+
       <div class="page-enter">
 
         <!-- Page header -->
@@ -47,13 +60,14 @@ export default async function render(outlet) {
 
         <!-- Stat cards -->
         <div class="grid-4 mb-6">
-          ${_statCard({ icon: 'ph-student',  color: 'green', value: pupils.length,   label: 'Total Pupils',   delta: '' })}
-          ${_statCard({ icon: 'ph-chalkboard-teacher', color: 'blue',  value: teachers.length, label: 'Teaching Staff', delta: '' })}
-          ${_statCard({ icon: 'ph-chalkboard', color: 'teal',  value: classes.length,  label: 'Classes',        delta: '' })}
-          ${_statCard({ icon: 'ph-money',     color: 'amber', value: `NGN ${_fmt(revenue)}`, label: 'Revenue This Session', delta: '' })}
+          ${_statCard({ icon: 'ph-student',              color: 'green', value: pupils.length,            label: 'Total Pupils' })}
+          ${_statCard({ icon: 'ph-chalkboard-teacher',   color: 'blue',  value: teachers.length,          label: 'Teaching Staff' })}
+          ${_statCard({ icon: 'ph-chalkboard',           color: 'teal',  value: classes.length,           label: 'Classes' })}
+          ${_statCard({ icon: 'ph-money',                color: 'amber', value: `NGN ${_fmt(revenue)}`,   label: 'Revenue This Session' })}
         </div>
 
-        <div class="grid" style="grid-template-columns:1fr 380px;gap:var(--sp-5);">
+        <!-- Two-column section -->
+        <div class="dash-two-col">
 
           <!-- Recent activity -->
           <div class="card">
@@ -64,18 +78,19 @@ export default async function render(outlet) {
               </div>
             </div>
             <div id="audit-list">
-              ${logs.length === 0 ? '<p class="text-muted text-sm">No activity yet.</p>' :
-                logs.map(l => `
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="stat-icon green" style="width:34px;height:34px;border-radius:var(--radius-sm);">
-                      <i class="ph-bold ph-activity" style="font-size:15px;"></i>
+              ${logs.length === 0
+                ? '<p class="text-muted text-sm">No activity yet.</p>'
+                : logs.map(l => `
+                    <div class="flex items-center gap-3 mb-3">
+                      <div class="stat-icon green" style="width:34px;height:34px;border-radius:var(--radius-sm);flex-shrink:0;">
+                        <i class="ph-bold ph-activity" style="font-size:15px;"></i>
+                      </div>
+                      <div class="flex-1" style="min-width:0;">
+                        <div class="text-sm font-semibold">${_formatAction(l.action)}</div>
+                        <div class="text-xs text-muted">${l.actorName || 'System'} &middot; ${_relativeTime(l.timestamp)}</div>
+                      </div>
                     </div>
-                    <div class="flex-1">
-                      <div class="text-sm font-semibold">${_formatAction(l.action)}</div>
-                      <div class="text-xs text-muted">${l.actorName || 'System'} &middot; ${_relativeTime(l.timestamp)}</div>
-                    </div>
-                  </div>
-                `).join('')
+                  `).join('')
               }
             </div>
           </div>
@@ -86,14 +101,15 @@ export default async function render(outlet) {
               <div class="card-title">Announcements</div>
               <a href="#/announcements" class="btn btn-ghost btn-sm">View all</a>
             </div>
-            ${announcements.length === 0 ? '<p class="text-muted text-sm">No announcements yet.</p>' :
-              announcements.map(a => `
-                <div class="mb-4 pb-4" style="border-bottom:1px solid var(--clr-border);">
-                  <div class="font-semibold text-sm">${a.title}</div>
-                  <div class="text-xs text-muted mt-1">${a.body?.slice(0,80)}${a.body?.length > 80 ? '...' : ''}</div>
-                  <div class="text-xs text-faint mt-1">${_relativeTime(a.createdAt)}</div>
-                </div>
-              `).join('')
+            ${announcements.length === 0
+              ? '<p class="text-muted text-sm">No announcements yet.</p>'
+              : announcements.map(a => `
+                  <div class="mb-4 pb-4" style="border-bottom:1px solid var(--clr-border);">
+                    <div class="font-semibold text-sm">${a.title}</div>
+                    <div class="text-xs text-muted mt-1">${a.body?.slice(0, 80)}${a.body?.length > 80 ? '...' : ''}</div>
+                    <div class="text-xs text-faint mt-1">${_relativeTime(a.createdAt)}</div>
+                  </div>
+                `).join('')
             }
           </div>
 
@@ -103,12 +119,12 @@ export default async function render(outlet) {
         <div class="card mt-5">
           <div class="card-header"><div class="card-title">Quick Actions</div></div>
           <div class="flex flex-wrap gap-3">
-            ${_quickLink('/pupils',     'ph-user-plus',  'Add Pupil')}
-            ${_quickLink('/results',    'ph-medal',      'Enter Results')}
-            ${_quickLink('/payments',   'ph-money',      'Record Payment')}
-            ${_quickLink('/attendance', 'ph-user-check', 'Take Attendance')}
+            ${_quickLink('/pupils',     'ph-user-plus',    'Add Pupil')}
+            ${_quickLink('/results',    'ph-medal',        'Enter Results')}
+            ${_quickLink('/payments',   'ph-money',        'Record Payment')}
+            ${_quickLink('/attendance', 'ph-user-check',   'Take Attendance')}
             ${_quickLink('/cbt',        'ph-monitor-play', 'Create CBT Exam')}
-            ${_quickLink('/broadsheet', 'ph-table',      'View Broadsheet')}
+            ${_quickLink('/broadsheet', 'ph-table',        'View Broadsheet')}
           </div>
         </div>
 
@@ -154,13 +170,13 @@ function _formatAction(action) {
 
 function _relativeTime(ts) {
   if (!ts) return '';
-  const date  = ts.toDate ? ts.toDate() : new Date(ts);
-  const diff  = Date.now() - date.getTime();
-  const mins  = Math.floor(diff / 60000);
-  if (mins < 1)   return 'just now';
-  if (mins < 60)  return `${mins}m ago`;
+  const date = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)   return `${hrs}h ago`;
+  if (hrs < 24)  return `${hrs}h ago`;
   return date.toLocaleDateString('en-GB');
 }
 
