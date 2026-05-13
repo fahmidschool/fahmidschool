@@ -56,9 +56,9 @@
     {
       label: 'School',
       items: [
-        { route: '/classes',       label: 'Classes',        icon: 'ph-chalkboard' },
-        { route: '/subjects',      label: 'Subjects',       icon: 'ph-books' },
-        { route: '/timetable',     label: 'Timetable',      icon: 'ph-calendar-dots' },
+        { route: '/classes',       label: 'Classes',          icon: 'ph-chalkboard' },
+        { route: '/subjects',      label: 'Subjects',         icon: 'ph-books' },
+        { route: '/timetable',     label: 'Timetable',        icon: 'ph-calendar-dots' },
         { route: '/sessions',      label: 'Sessions & Terms', icon: 'ph-calendar' },
       ]
     },
@@ -76,6 +76,7 @@
         { route: '/results',       label: 'Results',        icon: 'ph-medal' },
         { route: '/broadsheet',    label: 'Broadsheet',     icon: 'ph-table' },
         { route: '/attendance',    label: 'Attendance',     icon: 'ph-user-check' },
+        { route: '/lessons',       label: 'Lesson Notes',   icon: 'ph-book-open' },
         { route: '/cbt',           label: 'CBT Exams',      icon: 'ph-monitor-play' },
       ]
     },
@@ -119,6 +120,7 @@
   router.register('/cbt',           () => import('/js/modules/admin/cbt.js'));
   router.register('/timetable',     () => import('/js/modules/admin/timetable.js'));
   router.register('/announcements', () => import('/js/modules/admin/announcements.js'));
+  router.register('/lessons',       () => import('/js/modules/admin/lessons.js'));
   router.register('/reports',       () => import('/js/modules/admin/reports.js'));
   router.register('/settings',      () => import('/js/modules/admin/settings.js'));
 
