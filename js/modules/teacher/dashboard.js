@@ -2,16 +2,17 @@
 // teacher/dashboard.js — Teacher dashboard
 // ============================================================
 
-import { store }              from '/js/store.js';
-import { getAnnouncements }   from '/js/services/announcements.js';
-import { setPageTitle }       from '/js/components/topbar.js';
-import { getActiveSession }   from '/js/services/sessions.js';
-import { getAllClasses }       from '/js/services/classes.js';
+import { store }            from '/js/store.js';
+import { getAnnouncements } from '/js/services/announcements.js';
+import { setPageTitle }     from '/js/components/topbar.js';
+import { getActiveSession } from '/js/services/sessions.js';
+import { getAllClasses }     from '/js/services/classes.js';
 
 export default async function render(outlet) {
   setPageTitle('Dashboard');
 
-  const profile  = store.get('profile');
+  const profile = store.get('profile');
+
   const [session, announcements, classes] = await Promise.all([
     getActiveSession(),
     getAnnouncements({ count: 5 }),
@@ -28,7 +29,8 @@ export default async function render(outlet) {
       </div>
     </div>
 
-    <div class="grid-3 mb-6">
+    <!-- Stat cards -->
+    <div class="dash-stats-grid mb-6">
       <div class="stat-card">
         <div class="stat-icon green"><i class="ph-bold ph-chalkboard" style="font-size:22px;"></i></div>
         <div class="stat-body">
@@ -52,6 +54,7 @@ export default async function render(outlet) {
       </div>
     </div>
 
+    <!-- Announcements -->
     <div class="card">
       <div class="card-header"><div class="card-title">Recent Announcements</div></div>
       ${announcements.length === 0
@@ -65,6 +68,7 @@ export default async function render(outlet) {
       }
     </div>
 
+    <!-- Quick actions -->
     <div class="card mt-5">
       <div class="card-header"><div class="card-title">Quick Actions</div></div>
       <div class="flex flex-wrap gap-3">
@@ -74,5 +78,18 @@ export default async function render(outlet) {
         <a href="#/assignments" class="btn btn-secondary"><i class="ph-bold ph-clipboard-text"></i> Create Assignment</a>
       </div>
     </div>
+
+    <style>
+      .dash-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--sp-5);
+      }
+      @media (max-width: 768px) {
+        .dash-stats-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   `;
 }
