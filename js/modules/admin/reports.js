@@ -28,17 +28,14 @@ export default async function render(outlet) {
     const totalRevenue  = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
     const arrears       = payments.filter(p => p.balance && p.balance > 0);
 
-    // Gender distribution
     const male   = pupils.filter(p => p.gender === 'Male').length;
     const female = pupils.filter(p => p.gender === 'Female').length;
 
-    // Class distribution
     const classCounts = classes.map(c => ({
       name:  c.name,
       count: pupils.filter(p => p.classId === c.id).length,
     }));
 
-    // Payment method breakdown
     const methodMap = {};
     payments.forEach(p => {
       const m = p.method || 'Unknown';
@@ -46,6 +43,19 @@ export default async function render(outlet) {
     });
 
     outlet.innerHTML = `
+      <style>
+        .reports-two-col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: var(--sp-5);
+        }
+        @media (max-width: 768px) {
+          .reports-two-col {
+            grid-template-columns: 1fr;
+          }
+        }
+      </style>
+
       <div class="page-header">
         <div class="page-header-left">
           <h1>Reports</h1>
@@ -90,24 +100,24 @@ export default async function render(outlet) {
         </div>
       </div>
 
-      <div class="grid" style="grid-template-columns:1fr 1fr;gap:var(--sp-5);">
+      <div class="reports-two-col">
 
         <!-- Enrolment by class -->
         <div class="card">
           <div class="card-header"><div class="card-title">Enrolment by Class</div></div>
           ${classCounts.map(c => `
             <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-3">
-                <div class="stat-icon green" style="width:32px;height:32px;border-radius:var(--radius-sm);">
+              <div class="flex items-center gap-3" style="min-width:0;flex:1;">
+                <div class="stat-icon green" style="width:32px;height:32px;border-radius:var(--radius-sm);flex-shrink:0;">
                   <i class="ph-bold ph-chalkboard" style="font-size:14px;"></i>
                 </div>
-                <span class="font-medium">${c.name}</span>
+                <span class="font-medium" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</span>
               </div>
-              <div class="flex items-center gap-3">
-                <div style="width:120px;height:6px;background:var(--clr-border);border-radius:var(--radius-full);overflow:hidden;">
-                  <div style="width:${pupils.length ? Math.round((c.count/pupils.length)*100) : 0}%;height:100%;background:var(--clr-primary);border-radius:var(--radius-full);"></div>
+              <div class="flex items-center gap-3" style="flex-shrink:0;">
+                <div style="width:80px;height:6px;background:var(--clr-border);border-radius:var(--radius-full);overflow:hidden;">
+                  <div style="width:${pupils.length ? Math.round((c.count / pupils.length) * 100) : 0}%;height:100%;background:var(--clr-primary);border-radius:var(--radius-full);"></div>
                 </div>
-                <span class="font-bold" style="min-width:30px;text-align:right;">${c.count}</span>
+                <span class="font-bold" style="min-width:24px;text-align:right;">${c.count}</span>
               </div>
             </div>
           `).join('')}
@@ -120,21 +130,21 @@ export default async function render(outlet) {
             <div class="text-center flex-1">
               <div style="font-size:2.5rem;font-weight:700;color:var(--clr-info);">${male}</div>
               <div class="text-sm text-muted">Male</div>
-              <div class="text-xs text-faint">${pupils.length ? Math.round((male/pupils.length)*100) : 0}%</div>
+              <div class="text-xs text-faint">${pupils.length ? Math.round((male / pupils.length) * 100) : 0}%</div>
             </div>
-            <div style="width:1px;height:80px;background:var(--clr-border);"></div>
+            <div style="width:1px;height:80px;background:var(--clr-border);flex-shrink:0;"></div>
             <div class="text-center flex-1">
               <div style="font-size:2.5rem;font-weight:700;color:var(--clr-accent);">${female}</div>
               <div class="text-sm text-muted">Female</div>
-              <div class="text-xs text-faint">${pupils.length ? Math.round((female/pupils.length)*100) : 0}%</div>
+              <div class="text-xs text-faint">${pupils.length ? Math.round((female / pupils.length) * 100) : 0}%</div>
             </div>
           </div>
           <div style="height:12px;background:var(--clr-border);border-radius:var(--radius-full);overflow:hidden;">
-            <div style="width:${pupils.length ? Math.round((male/pupils.length)*100) : 50}%;height:100%;background:var(--clr-info);border-radius:var(--radius-full);"></div>
+            <div style="width:${pupils.length ? Math.round((male / pupils.length) * 100) : 50}%;height:100%;background:var(--clr-info);border-radius:var(--radius-full);"></div>
           </div>
           <div class="flex justify-between mt-2 text-xs text-muted">
-            <span>Male ${pupils.length ? Math.round((male/pupils.length)*100) : 0}%</span>
-            <span>Female ${pupils.length ? Math.round((female/pupils.length)*100) : 0}%</span>
+            <span>Male ${pupils.length ? Math.round((male / pupils.length) * 100) : 0}%</span>
+            <span>Female ${pupils.length ? Math.round((female / pupils.length) * 100) : 0}%</span>
           </div>
         </div>
 
@@ -160,7 +170,7 @@ export default async function render(outlet) {
               <div class="stat-icon green" style="width:30px;height:30px;flex-shrink:0;">
                 <i class="ph-bold ph-activity" style="font-size:13px;"></i>
               </div>
-              <div class="flex-1">
+              <div class="flex-1" style="min-width:0;">
                 <div class="text-sm font-semibold">${_formatAction(l.action)}</div>
                 <div class="text-xs text-muted">${l.actorName || 'System'} &mdash; ${_relTime(l.timestamp)}</div>
               </div>
@@ -170,6 +180,7 @@ export default async function render(outlet) {
 
       </div>
     `;
+
   } catch (err) {
     outlet.innerHTML = `<div class="alert alert-danger mt-4">Failed to load reports. ${err.message}</div>`;
   }
@@ -186,8 +197,8 @@ function _formatAction(action) {
 function _relTime(ts) {
   if (!ts) return '';
   const date = ts.toDate ? ts.toDate() : new Date(ts);
-  const diff  = Date.now() - date.getTime();
-  const mins  = Math.floor(diff / 60000);
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
   if (mins < 1)  return 'just now';
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
