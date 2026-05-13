@@ -33,39 +33,49 @@
   import { buildTopbar }  from '/js/components/topbar.js';
   import { router }       from '/js/router.js';
 
-  authService.onAuthChange(({ user, profile }) => {
-    if (!user || profile?.role !== 'pupil') {
-      window.location.href = '/index.html';
-    }
-  });
-
   const NAV = [
     {
       label: 'My Portal',
       items: [
-        { route: '/dashboard',   label: 'Dashboard',      icon: 'ph-squares-four' },
-        { route: '/results',     label: 'My Results',     icon: 'ph-medal' },
-        { route: '/attendance',  label: 'My Attendance',  icon: 'ph-calendar-check' },
-        { route: '/payments',    label: 'Payment History', icon: 'ph-receipt' },
-        { route: '/cbt',         label: 'CBT Exams',      icon: 'ph-monitor-play' },
-        { route: '/announcements', label: 'Announcements', icon: 'ph-megaphone' },
+        { route: '/dashboard',     label: 'Dashboard',       icon: 'ph-squares-four' },
+        { route: '/results',       label: 'My Results',      icon: 'ph-medal' },
+        { route: '/attendance',    label: 'My Attendance',   icon: 'ph-calendar-check' },
+        { route: '/payments',      label: 'Payment History', icon: 'ph-receipt' },
+        { route: '/cbt',           label: 'CBT Exams',       icon: 'ph-monitor-play' },
+        { route: '/announcements', label: 'Announcements',   icon: 'ph-megaphone' },
       ]
     },
   ];
 
-  buildSidebar({ containerId: 'sidebar-container', navItems: NAV, role: 'Pupil' });
-  buildTopbar({ containerId: 'topbar-container' });
+  let routerStarted = false;
 
-  router.defineOutlet('#page-outlet');
-  router.register('/dashboard',    () => import('/js/modules/pupil/dashboard.js'));
-  router.register('/results',      () => import('/js/modules/pupil/results.js'));
-  router.register('/attendance',   () => import('/js/modules/pupil/attendance.js'));
-  router.register('/payments',     () => import('/js/modules/pupil/payments.js'));
-  router.register('/cbt',          () => import('/js/modules/pupil/cbt.js'));
-  router.register('/announcements',() => import('/js/modules/admin/announcements.js'));
+  authService.onAuthChange(({ user, profile }) => {
+    if (!user || profile?.role !== 'pupil') {
+      window.location.href = '/index.html';
+      return;
+    }
 
-  if (!window.location.hash || window.location.hash === '#') window.location.hash = '/dashboard';
-  router.init();
+    // Only build the UI and start the router once
+    if (routerStarted) return;
+    routerStarted = true;
+
+    buildSidebar({ containerId: 'sidebar-container', navItems: NAV, role: 'Pupil' });
+    buildTopbar({ containerId: 'topbar-container' });
+
+    router.defineOutlet('#page-outlet');
+    router.register('/dashboard',     () => import('/js/modules/pupil/dashboard.js'));
+    router.register('/results',       () => import('/js/modules/pupil/results.js'));
+    router.register('/attendance',    () => import('/js/modules/pupil/attendance.js'));
+    router.register('/payments',      () => import('/js/modules/pupil/payments.js'));
+    router.register('/cbt',           () => import('/js/modules/pupil/cbt.js'));
+    router.register('/announcements', () => import('/js/modules/admin/announcements.js'));
+
+    if (!window.location.hash || window.location.hash === '#') {
+      window.location.hash = '/dashboard';
+    }
+
+    router.init();
+  });
 </script>
 
 </body>
