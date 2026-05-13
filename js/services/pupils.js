@@ -1,33 +1,30 @@
 // ============================================================
 // pupils.js — Pupil service layer
 // ============================================================
-
 import {
   collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
-  query, where, orderBy, serverTimestamp, writeBatch
+  query, where, serverTimestamp, writeBatch
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
 import { db }        from '../firebase.js';
 import { logAction } from './audit.js';
-
 const COL = 'pupils';
-
 export async function getAllPupils() {
-  const snap = await getDocs(query(collection(db, COL), orderBy('surname')));
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(collection(db, COL));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => a.surname.localeCompare(b.surname));
 }
-
 export async function getPupilsByClass(classId) {
-  const q    = query(collection(db, COL), where('classId', '==', classId), orderBy('surname'));
+  const q    = query(collection(db, COL), where('classId', '==', classId));
   const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => a.surname.localeCompare(b.surname));
 }
-
 export async function getPupil(id) {
   const snap = await getDoc(doc(db, COL, id));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
-
 export async function createPupil(data) {
   const ref = await addDoc(collection(db, COL), {
     ...data,
@@ -39,17 +36,14 @@ export async function createPupil(data) {
   await logAction('pupil_created', { pupilId: ref.id, name: `${data.surname} ${data.firstName}` });
   return ref.id;
 }
-
 export async function updatePupil(id, data) {
   await updateDoc(doc(db, COL, id), { ...data, updatedAt: serverTimestamp() });
   await logAction('pupil_updated', { pupilId: id });
 }
-
 export async function deletePupil(id) {
   await deleteDoc(doc(db, COL, id));
   await logAction('pupil_deleted', { pupilId: id });
 }
-
 export async function promotePupils(pupilIds, newClassId) {
   const batch = writeBatch(db);
   pupilIds.forEach(id => {
@@ -58,7 +52,6 @@ export async function promotePupils(pupilIds, newClassId) {
   await batch.commit();
   await logAction('pupils_promoted', { count: pupilIds.length, newClassId });
 }
-
 export async function searchPupils(term) {
   const all = await getAllPupils();
   const t   = term.toLowerCase();
