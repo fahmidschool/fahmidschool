@@ -10,7 +10,7 @@ import { db }                from '/js/firebase.js';
 import { store }             from '/js/store.js';
 import { getAllClasses }      from '/js/services/classes.js';
 import { getSubjectsByClass } from '/js/services/subjects.js';
-import { getAllSessions, getTermsBySession } from '/js/services/sessions.js';
+import { getAllSessions }     from '/js/services/sessions.js';
 import { setPageTitle }      from '/js/components/topbar.js';
 import { openModal, closeModal } from '/js/components/modal.js';
 import { toast }             from '/js/toast.js';
@@ -73,36 +73,58 @@ async function _loadNotes() {
   area.innerHTML = `<div class="text-center"><span class="spinner spinner-dark"></span></div>`;
 
   try {
-    const uid   = store.get('user')?.uid;
+    const uid = store.get('user')?.uid;
     const constraints = [where('teacherId', '==', uid), orderBy('createdAt', 'desc')];
     if (_selectedClass) constraints.unshift(where('classId', '==', _selectedClass));
-    const snap  = await getDocs(query(collection(db, 'lesson_notes'), ...constraints));
+    const snap = await getDocs(query(collection(db, 'lesson_notes'), ...constraints));
     _notes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    area.innerHTML = _notes.length === 0
-      ? `<div class="card text-center text-muted" style="padding:var(--sp-12);">
+    if (_notes.length === 0) {
+      area.innerHTML = `
+        <div class="card text-center text-muted" style="padding:var(--sp-12);">
           <i class="ph-bold ph-book-open" style="font-size:48px;display:block;margin-bottom:var(--sp-4);color:var(--clr-text-faint);"></i>
           No lesson notes uploaded yet.
-         </div>`
-      : `<div class="grid-3">
-          ${_notes.map(n => `
-            <div class="card">
-              <div class="flex items-start justify-between mb-3">
-                <div class="stat-icon green" style="width:40px;height:40px;">
-                  <i class="ph-bold ph-file-text" style="font-size:18px;"></i>
-                </div>
-                <button class="btn btn-ghost btn-sm text-danger delete-note-btn" data-id="${n.id}">
-                  <i class="ph-bold ph-trash"></i>
-                </button>
+        </div>`;
+      return;
+    }
+
+    area.innerHTML = `
+      <style>
+        .notes-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--sp-4);
+        }
+        @media (max-width: 768px) {
+          .notes-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .notes-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+      </style>
+      <div class="notes-grid">
+        ${_notes.map(n => `
+          <div class="card">
+            <div class="flex items-start justify-between mb-3">
+              <div class="stat-icon green" style="width:40px;height:40px;flex-shrink:0;">
+                <i class="ph-bold ph-file-text" style="font-size:18px;"></i>
               </div>
-              <div class="font-bold mb-1">${n.title}</div>
-              <div class="text-sm text-muted mb-1">${n.subjectName || n.subjectId}</div>
-              <div class="text-xs text-muted mb-3">${n.className || ''} &mdash; Week ${n.week || '-'}</div>
-              ${n.description ? `<p class="text-sm text-muted mb-3">${n.description}</p>` : ''}
-              <div class="text-xs text-faint">${n.createdAt?.toDate ? n.createdAt.toDate().toLocaleDateString('en-GB') : ''}</div>
+              <button class="btn btn-ghost btn-sm text-danger delete-note-btn" data-id="${n.id}">
+                <i class="ph-bold ph-trash"></i>
+              </button>
             </div>
-          `).join('')}
-         </div>`;
+            <div class="font-bold mb-1">${n.title}</div>
+            <div class="text-sm text-muted mb-1">${n.subjectName || n.subjectId}</div>
+            <div class="text-xs text-muted mb-3">${n.className || ''} &mdash; Week ${n.week || '-'}</div>
+            ${n.description ? `<p class="text-sm text-muted mb-3" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${n.description}</p>` : ''}
+            <div class="text-xs text-faint">${n.createdAt?.toDate ? n.createdAt.toDate().toLocaleDateString('en-GB') : ''}</div>
+          </div>
+        `).join('')}
+      </div>`;
 
     document.querySelectorAll('.delete-note-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -123,6 +145,7 @@ async function _loadNotes() {
 function _openUploadModal() {
   openModal({
     title: 'Upload Lesson Note',
+    size:  'lg',
     bodyHTML: `
       <div class="form-group">
         <label class="form-label">Title <span class="required">*</span></label>
@@ -170,10 +193,8 @@ function _openUploadModal() {
       <button class="btn btn-secondary" id="ln-cancel">Cancel</button>
       <button class="btn btn-primary" id="ln-save">Upload Note</button>
     `,
-    size: 'lg',
   });
 
-  // Update subjects when class changes in modal
   document.getElementById('ln-class').addEventListener('change', async e => {
     const subs = e.target.value ? await getSubjectsByClass(e.target.value) : [];
     const sel  = document.getElementById('ln-subject');
