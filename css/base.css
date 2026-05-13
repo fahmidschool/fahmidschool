@@ -2,7 +2,6 @@
    BASE.CSS — Reset, CSS Variables, Typography
    Fahmid Nursery & Primary School
    ============================================================ */
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap');
 
 *, *::before, *::after {
@@ -18,20 +17,17 @@
   --clr-primary-light:  #e8f5ee;
   --clr-accent:         #f5a623;
   --clr-accent-light:   #fef3dc;
-
   /* Neutrals */
   --clr-bg:             #f4f6f8;
   --clr-surface:        #ffffff;
   --clr-surface-2:      #f9fafb;
   --clr-border:         #e2e8f0;
   --clr-border-strong:  #cbd5e1;
-
   /* Text */
   --clr-text:           #1a202c;
   --clr-text-muted:     #64748b;
   --clr-text-faint:     #94a3b8;
   --clr-text-inverse:   #ffffff;
-
   /* Status */
   --clr-success:        #16a34a;
   --clr-success-bg:     #dcfce7;
@@ -41,18 +37,15 @@
   --clr-danger-bg:      #fee2e2;
   --clr-info:           #2563eb;
   --clr-info-bg:        #dbeafe;
-
   /* Sidebar */
   --sidebar-bg:         #0f3d26;
   --sidebar-width:      260px;
   --sidebar-collapsed:  68px;
   --topbar-height:      64px;
-
   /* Typography */
   --font-display:       'DM Serif Display', serif;
   --font-body:          'DM Sans', sans-serif;
   --font-mono:          'Courier New', monospace;
-
   /* Spacing scale */
   --sp-1:  4px;
   --sp-2:  8px;
@@ -64,20 +57,17 @@
   --sp-10: 40px;
   --sp-12: 48px;
   --sp-16: 64px;
-
   /* Radii */
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  16px;
-  --radius-xl:  24px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
   --radius-full: 9999px;
-
   /* Shadows */
   --shadow-sm:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
   --shadow-md:  0 4px 12px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04);
   --shadow-lg:  0 10px 30px rgba(0,0,0,.10), 0 4px 10px rgba(0,0,0,.06);
   --shadow-xl:  0 20px 50px rgba(0,0,0,.14);
-
   /* Transitions */
   --transition-fast:   150ms ease;
   --transition-base:   250ms ease;
@@ -89,6 +79,8 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  overflow-x: hidden; /* ← prevents horizontal scroll on html */
 }
 
 body {
@@ -98,6 +90,8 @@ body {
   color: var(--clr-text);
   background: var(--clr-bg);
   min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden; /* ← prevents any child element from blowing out the width */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -142,9 +136,9 @@ input, select, textarea {
   outline-offset: 2px;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--clr-border-strong); border-radius: var(--radius-full); }
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--clr-border-strong); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--clr-text-faint); }
 
 ::selection { background: var(--clr-primary-light); color: var(--clr-primary-dark); }
