@@ -102,7 +102,6 @@
   padding: var(--sp-2) var(--sp-4);
   color: rgba(255,255,255,.65);
   cursor: pointer;
-  border-radius: 0;
   transition: background var(--transition-fast), color var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
@@ -222,7 +221,7 @@
   text-transform: capitalize;
 }
 
-/* ── Topbar ───────────────────────────────────────────────── */
+/* ── Topbar ──────────────────────────────────────────────── */
 .topbar {
   position: fixed;
   top: 0;
@@ -249,6 +248,13 @@
   flex: 1;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Desktop toggle (collapse/expand) — hidden on mobile */
 .topbar-toggle {
   width: 36px;
   height: 36px;
@@ -262,16 +268,24 @@
 }
 .topbar-toggle:hover { background: var(--clr-bg); color: var(--clr-text); }
 
+/* Mobile hamburger — hidden on desktop */
+#mobile-menu-btn {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  align-items: center;
+  justify-content: center;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+#mobile-menu-btn:hover { background: var(--clr-bg); color: var(--clr-text); }
+
 .page-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--clr-text);
-}
-
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
 }
 
 .topbar-action {
@@ -339,7 +353,7 @@
   flex-shrink: 0;
 }
 
-/* ── Mobile ──────────────────────────────────────────────── */
+/* ── Mobile Overlay ──────────────────────────────────────── */
 .mobile-overlay {
   display: none;
   position: fixed;
@@ -349,15 +363,43 @@
   backdrop-filter: blur(2px);
 }
 
+/* ── Mobile Breakpoint ───────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Sidebar: slide in from left, always full width */
   .sidebar {
     transform: translateX(-100%);
     width: var(--sidebar-width) !important;
+    box-shadow: var(--shadow-xl);
   }
-  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
 
-  .topbar { left: 0 !important; }
-  .main-content { margin-left: 0 !important; padding: var(--sp-4); }
+  /* Topbar: full width, no left offset */
+  .topbar {
+    left: 0 !important;
+    padding: 0 var(--sp-4);
+  }
 
-  .mobile-overlay.visible { display: block; }
+  /* Content: no left margin */
+  .main-content {
+    margin-left: 0 !important;
+    padding: var(--sp-4);
+  }
+
+  /* Show overlay when active */
+  .mobile-overlay.visible {
+    display: block;
+  }
+
+  /* Show hamburger, hide desktop toggle */
+  #mobile-menu-btn  { display: flex; }
+  #topbar-toggle    { display: none; }
+}
+
+/* ── Desktop Breakpoint ──────────────────────────────────── */
+@media (min-width: 769px) {
+  /* Hide hamburger on desktop */
+  #mobile-menu-btn { display: none; }
+  #topbar-toggle   { display: flex; }
 }
