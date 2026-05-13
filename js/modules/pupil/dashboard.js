@@ -19,6 +19,11 @@ export default async function render(outlet) {
     const uid     = store.get('user')?.uid;
     const profile = store.get('profile');
 
+    if (!uid) {
+      outlet.innerHTML = `<div class="alert alert-danger mt-4">Session expired. Please log in again.</div>`;
+      return;
+    }
+
     const [session, announcements] = await Promise.all([
       getActiveSession(),
       getAnnouncements({ audience: 'pupil', count: 5 }),
@@ -26,19 +31,21 @@ export default async function render(outlet) {
 
     const term = session ? await getActiveTerm(session.id) : null;
 
+    const canQueryTerm = !!(session?.id && term?.id && uid);
+
     const [results, payments, cbtResults, attendanceRecords] = await Promise.all([
-      session && term ? getPupilResults({ sessionId: session.id, termId: term.id, pupilId: uid }) : Promise.resolve([]),
+      canQueryTerm ? getPupilResults({ sessionId: session.id, termId: term.id, pupilId: uid }) : Promise.resolve([]),
       getPupilPayments(uid),
       getPupilCBTResults(uid),
-      session && term ? getPupilAttendance({ pupilId: uid, sessionId: session.id, termId: term.id }) : Promise.resolve([]),
+      canQueryTerm ? getPupilAttendance({ pupilId: uid, sessionId: session.id, termId: term.id }) : Promise.resolve([]),
     ]);
 
-    const attendance   = computeAttendanceSummary(attendanceRecords);
-    const totalPaid    = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
-    const termAverage  = results.length
+    const attendance  = computeAttendanceSummary(attendanceRecords);
+    const totalPaid   = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const termAverage = results.length
       ? Math.round(results.reduce((s, r) => s + (r.total || 0), 0) / results.length)
       : null;
-    const arrears      = payments.filter(p => p.balance && p.balance > 0);
+    const arrears     = payments.filter(p => p.balance && p.balance > 0);
 
     const displayName = profile?.displayName || `${profile?.surname} ${profile?.firstName}` || 'Pupil';
     const className   = profile?.className || '';
@@ -83,7 +90,7 @@ export default async function render(outlet) {
         </div>
 
         <!-- Two-column section -->
-        <div class="dash-two-col" style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-5);">
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:var(--sp-5);">
 
           <!-- Results summary -->
           <div class="card">
@@ -253,11 +260,11 @@ export default async function render(outlet) {
         <div class="card mt-5">
           <div class="card-header"><div class="card-title">Quick Links</div></div>
           <div class="flex flex-wrap gap-3">
-            ${_quickLink('/results',      'ph-medal',           'My Results')}
-            ${_quickLink('/attendance',   'ph-calendar-check',  'Attendance')}
-            ${_quickLink('/payments',     'ph-receipt',         'Payments')}
-            ${_quickLink('/cbt',          'ph-monitor-play',    'CBT Exams')}
-            ${_quickLink('/announcements','ph-megaphone',       'Announcements')}
+            ${_quickLink('/results',       'ph-medal',          'My Results')}
+            ${_quickLink('/attendance',    'ph-calendar-check', 'Attendance')}
+            ${_quickLink('/payments',      'ph-receipt',        'Payments')}
+            ${_quickLink('/cbt',           'ph-monitor-play',   'CBT Exams')}
+            ${_quickLink('/announcements', 'ph-megaphone',      'Announcements')}
           </div>
         </div>
 
