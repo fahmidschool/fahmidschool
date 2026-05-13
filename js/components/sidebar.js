@@ -1,15 +1,14 @@
 // ============================================================
 // sidebar.js — Sidebar component
 // ============================================================
-
 import { store } from '../store.js';
 
 export function buildSidebar({ containerId, navItems, role }) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const profile    = store.get('profile') || {};
-  const initials   = _getInitials(profile.displayName || profile.name || profile.surname || 'U');
+  const profile     = store.get('profile') || {};
+  const initials    = _getInitials(profile.displayName || profile.name || profile.surname || 'U');
   const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
 
   container.innerHTML = `
@@ -31,7 +30,7 @@ export function buildSidebar({ containerId, navItems, role }) {
           <div class="user-avatar">${initials}</div>
           <div class="sidebar-user-info">
             <div class="user-name">
-              ${profile.displayName || (profile.surname ? profile.surname + ' ' + profile.firstName : 'User')}
+              ${profile.displayName || (profile.surname ? profile.surname + ' ' + profile.firstName : profile.name || 'User')}
             </div>
             <div class="user-role">${role}</div>
           </div>
@@ -40,11 +39,8 @@ export function buildSidebar({ containerId, navItems, role }) {
     </aside>
   `;
 
-  // Highlight active nav item now and on every route change
   _highlightActive();
   window.addEventListener('hashchange', _highlightActive);
-
-  // Attach toggle logic AFTER sidebar HTML is in the DOM
   _attachToggle();
 }
 
@@ -54,8 +50,7 @@ function _buildNavHTML(navItems) {
     <div class="nav-section">
       ${section.label
         ? `<div class="nav-section-label">${section.label}</div>`
-        : ''
-      }
+        : ''}
       ${section.items.map(item => `
         <a class="nav-item"
            data-route="${item.route}"
@@ -67,8 +62,7 @@ function _buildNavHTML(navItems) {
           <span class="nav-label">${item.label}</span>
           ${item.badge
             ? `<span class="nav-badge">${item.badge}</span>`
-            : ''
-          }
+            : ''}
         </a>
       `).join('')}
     </div>
@@ -86,38 +80,38 @@ function _highlightActive() {
   });
 }
 
-// ── Toggle logic ────────────────────────────────────────────
+// ── Single delegated click handler ─────────────────────────
 function _attachToggle() {
-  // Use document-level delegation so it works regardless of
-  // when the topbar is rendered relative to the sidebar
+  // Guard against duplicate listeners if buildSidebar is called again
+  document.removeEventListener('click', _handleGlobalClick);
   document.addEventListener('click', _handleGlobalClick);
 }
 
 function _handleGlobalClick(e) {
-  // ── Sidebar collapse / expand (desktop) ──────────────────
+  // Desktop: collapse / expand
   if (e.target.closest('#topbar-toggle')) {
     _toggleSidebar();
     return;
   }
 
-  // ── Mobile: open sidebar via hamburger ───────────────────
+  // Mobile: open sidebar via hamburger
   if (e.target.closest('#mobile-menu-btn')) {
     _openMobile();
     return;
   }
 
-  // ── Mobile: close sidebar via overlay click ───────────────
+  // Mobile: close sidebar when overlay is clicked
   if (e.target.closest('#mobile-overlay')) {
     _closeMobile();
     return;
   }
 
-  // ── Mobile: close sidebar when a nav item is tapped ───────
+  // Mobile: close sidebar when a nav item is tapped
   if (e.target.closest('.nav-item')) {
-    const isMobileOpen = document.getElementById('main-sidebar')
-      ?.classList.contains('mobile-open');
-    if (isMobileOpen) _closeMobile();
-    return;
+    const sidebar = document.getElementById('main-sidebar');
+    if (sidebar?.classList.contains('mobile-open')) {
+      _closeMobile();
+    }
   }
 }
 
@@ -125,7 +119,6 @@ function _toggleSidebar() {
   const sidebar = document.getElementById('main-sidebar');
   const topbar  = document.getElementById('main-topbar');
   const content = document.getElementById('main-content');
-
   if (!sidebar) return;
 
   const collapsed = sidebar.classList.toggle('collapsed');
