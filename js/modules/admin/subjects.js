@@ -1,13 +1,12 @@
 // ============================================================
-// admin/subjects.js — Subjects management module
+// js/modules/admin/subjects.js — Subjects management module
 // ============================================================
 
-import { store }                                              from '/js/store.js';
-import { getAllSubjects, getSubjectsByClass,
-         createSubject, updateSubject, deleteSubject }        from '/js/services/subjects.js';
-import { getAllClasses }                                       from '/js/services/classes.js';
-import { setPageTitle }                                       from '/js/components/topbar.js';
-import { toast }                                              from '/js/toast.js';
+import { getAllSubjects, createSubject, updateSubject, deleteSubject } from '/js/services/subjects.js';
+import { getAllClasses }                                                from '/js/services/classes.js';
+import { setPageTitle }                                                from '/js/components/topbar.js';
+import { openModal, closeModal }                                       from '/js/components/modal.js';
+import { toast }                                                       from '/js/toast.js';
 
 let _subjects = [];
 let _classes  = [];
@@ -45,46 +44,11 @@ export default async function render(outlet) {
     </div>
 
     <div id="subj-table-area"></div>
-
-    <!-- Modal -->
-    <div class="modal-overlay hidden" id="subj-modal">
-      <div class="modal">
-        <div class="modal-header">
-          <h2 class="modal-title" id="subj-modal-title">Add Subject</h2>
-          <button class="modal-close" id="subj-modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Subject Name <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="subj-name" placeholder="e.g. Mathematics" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Class <span class="text-danger">*</span></label>
-            <select class="form-control" id="subj-class">
-              <option value="">Select Class</option>
-              ${_classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Description</label>
-            <input type="text" class="form-control" id="subj-desc" placeholder="Optional description" />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" id="subj-cancel-btn">Cancel</button>
-          <button class="btn btn-primary" id="subj-save-btn">Save Subject</button>
-        </div>
-      </div>
-    </div>
   `;
 
   _renderTable(_subjects);
 
-  document.getElementById('subj-add-btn').addEventListener('click', () => _openModal());
-  document.getElementById('subj-modal-close').addEventListener('click', _closeModal);
-  document.getElementById('subj-cancel-btn').addEventListener('click', _closeModal);
-  document.getElementById('subj-save-btn').addEventListener('click', _saveSubject);
-
+  document.getElementById('subj-add-btn').addEventListener('click', () => _openSubjectModal());
   document.getElementById('subj-class-filter').addEventListener('change', _applyFilters);
   document.getElementById('subj-search').addEventListener('input', _applyFilters);
 }
@@ -135,7 +99,7 @@ function _renderTable(subjects) {
   `;
 
   area.querySelectorAll('[data-edit]').forEach(btn => {
-    btn.addEventListener('click', () => _openModal(btn.dataset.edit));
+    btn.addEventListener('click', () => _openSubjectModal(btn.dataset.edit));
   });
   area.querySelectorAll('[data-delete]').forEach(btn => {
     btn.addEventListener('click', () => _deleteSubject(btn.dataset.delete));
@@ -155,48 +119,65 @@ function _applyFilters() {
   _renderTable(filtered);
 }
 
-let _editingId = null;
+function _openSubjectModal(id = null) {
+  const existing = id ? _subjects.find(s => s.id === id) : null;
 
-function _openModal(id = null) {
-  _editingId = id;
-  const modal = document.getElementById('subj-modal');
-  document.getElementById('subj-modal-title').textContent = id ? 'Edit Subject' : 'Add Subject';
+  const bodyHTML = `
+    <div class="form-group">
+      <label class="form-label">Subject Name <span class="text-danger">*</span></label>
+      <input type="text" class="form-control" id="subj-name"
+        placeholder="e.g. Mathematics"
+        value="${existing?.name ?? ''}" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Class <span class="text-danger">*</span></label>
+      <select class="form-control" id="subj-class">
+        <option value="">Select Class</option>
+        ${_classes.map(c => `
+          <option value="${c.id}" ${existing?.classId === c.id ? 'selected' : ''}>${c.name}</option>
+        `).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input type="text" class="form-control" id="subj-desc"
+        placeholder="Optional description"
+        value="${existing?.description ?? ''}" />
+    </div>
+  `;
 
-  if (id) {
-    const s = _subjects.find(s => s.id === id);
-    document.getElementById('subj-name').value  = s?.name        ?? '';
-    document.getElementById('subj-class').value = s?.classId     ?? '';
-    document.getElementById('subj-desc').value  = s?.description ?? '';
-  } else {
-    document.getElementById('subj-name').value  = '';
-    document.getElementById('subj-class').value = '';
-    document.getElementById('subj-desc').value  = '';
-  }
+  const footerHTML = `
+    <button class="btn btn-ghost"   id="subj-cancel-btn">Cancel</button>
+    <button class="btn btn-primary" id="subj-save-btn">${id ? 'Update Subject' : 'Save Subject'}</button>
+  `;
 
-  modal.classList.remove('hidden');
+  openModal({
+    title:      id ? 'Edit Subject' : 'Add Subject',
+    bodyHTML,
+    footerHTML,
+    onClose:    closeModal,
+  });
+
+  document.getElementById('subj-cancel-btn').addEventListener('click', closeModal);
+  document.getElementById('subj-save-btn').addEventListener('click', () => _saveSubject(id));
 }
 
-function _closeModal() {
-  document.getElementById('subj-modal').classList.add('hidden');
-  _editingId = null;
-}
-
-async function _saveSubject() {
+async function _saveSubject(id = null) {
   const name        = document.getElementById('subj-name').value.trim();
   const classId     = document.getElementById('subj-class').value;
   const description = document.getElementById('subj-desc').value.trim();
 
-  if (!name)    { toast.warning('Subject name is required.');  return; }
-  if (!classId) { toast.warning('Please select a class.');     return; }
+  if (!name)    { toast.warning('Subject name is required.'); return; }
+  if (!classId) { toast.warning('Please select a class.');    return; }
 
   const btn = document.getElementById('subj-save-btn');
   btn.disabled    = true;
   btn.textContent = 'Saving...';
 
   try {
-    if (_editingId) {
-      await updateSubject(_editingId, { name, classId, description });
-      const idx = _subjects.findIndex(s => s.id === _editingId);
+    if (id) {
+      await updateSubject(id, { name, classId, description });
+      const idx = _subjects.findIndex(s => s.id === id);
       if (idx !== -1) _subjects[idx] = { ..._subjects[idx], name, classId, description };
       toast.success('Subject updated successfully.');
     } else {
@@ -205,14 +186,14 @@ async function _saveSubject() {
       _subjects.sort((a, b) => a.name.localeCompare(b.name));
       toast.success('Subject created successfully.');
     }
-    _closeModal();
+    closeModal();
     _applyFilters();
   } catch (err) {
     toast.error('Could not save subject. Please try again.');
     console.error(err);
   } finally {
     btn.disabled    = false;
-    btn.textContent = 'Save Subject';
+    btn.textContent = id ? 'Update Subject' : 'Save Subject';
   }
 }
 
