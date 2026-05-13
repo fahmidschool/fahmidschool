@@ -10,7 +10,7 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
-} from 'https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js';
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 import {
   doc, getDoc, query, collection, where, getDocs, serverTimestamp, addDoc
