@@ -1,7 +1,6 @@
 // ============================================================
 // topbar.js — Topbar component
 // ============================================================
-
 import { authService } from '../auth.js';
 import { toast }       from '../toast.js';
 
@@ -14,14 +13,22 @@ export function buildTopbar({ containerId, pageTitle = '' }) {
   container.innerHTML = `
     <header class="topbar ${isCollapsed ? 'sidebar-collapsed' : ''}" id="main-topbar">
       <div class="topbar-left">
+
+        <!-- Desktop: collapse/expand toggle -->
         <div class="topbar-toggle" id="topbar-toggle" title="Toggle Sidebar">
           <i class="ph-bold ph-list" style="font-size:20px;"></i>
         </div>
+
+        <!-- Mobile: open sidebar hamburger -->
+        <div class="topbar-toggle" id="mobile-menu-btn" title="Menu">
+          <i class="ph-bold ph-list" style="font-size:20px;"></i>
+        </div>
+
         <div class="page-title" id="page-title">${pageTitle}</div>
       </div>
 
       <div class="topbar-right">
-        <div class="topbar-action" title="Announcements" id="notif-btn">
+        <div class="topbar-action" title="Notifications" id="notif-btn">
           <i class="ph-bold ph-bell" style="font-size:20px;"></i>
           <span class="notif-dot" id="notif-dot" style="display:none;"></span>
         </div>
@@ -31,11 +38,6 @@ export function buildTopbar({ containerId, pageTitle = '' }) {
       </div>
     </header>
   `;
-
-  // Update page title on route change
-  window.addEventListener('hashchange', () => {
-    // title is set per-module via setPageTitle()
-  });
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
     try {
