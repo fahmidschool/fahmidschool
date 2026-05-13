@@ -2,22 +2,26 @@
    UTILITIES.CSS — Helpers
    ============================================================ */
 
-/* Layout */
-.flex     { display: flex; }
-.flex-col { display: flex; flex-direction: column; }
-.grid     { display: grid; }
-.hidden   { display: none !important; }
-.block    { display: block; }
+/* ── Layout ──────────────────────────────────────────────── */
+.flex        { display: flex; }
+.flex-col    { display: flex; flex-direction: column; }
+.grid        { display: grid; }
+.hidden      { display: none !important; }
+.block       { display: block; }
 .inline-flex { display: inline-flex; }
 
-.items-center   { align-items: center; }
-.items-start    { align-items: flex-start; }
-.items-end      { align-items: flex-end; }
-.justify-center { justify-content: center; }
-.justify-between{ justify-content: space-between; }
-.justify-end    { justify-content: flex-end; }
-.flex-1         { flex: 1; }
-.flex-wrap      { flex-wrap: wrap; }
+.items-center    { align-items: center; }
+.items-start     { align-items: flex-start; }
+.items-end       { align-items: flex-end; }
+.justify-center  { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-end     { justify-content: flex-end; }
+
+.flex-1    { flex: 1; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-shrink-0 { flex-shrink: 0; }
+.min-w-0   { min-width: 0; }
+
 .gap-1 { gap: var(--sp-1); }
 .gap-2 { gap: var(--sp-2); }
 .gap-3 { gap: var(--sp-3); }
@@ -25,16 +29,33 @@
 .gap-5 { gap: var(--sp-5); }
 .gap-6 { gap: var(--sp-6); }
 
-/* Grid helpers */
+/* ── Grid helpers ────────────────────────────────────────── */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-5); }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-5); }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-5); }
 
-@media (max-width: 1024px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px)  { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 520px)  { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+/* grid-4: 4 cols → 2 cols at 1024px → 1 col at 600px */
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .grid-4 { grid-template-columns: 1fr; }
+}
 
-/* Text */
+/* grid-3: 3 cols → 2 cols at 900px → 1 col at 600px */
+@media (max-width: 900px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* grid-2: 2 cols → 1 col at 600px */
+@media (max-width: 600px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Text ────────────────────────────────────────────────── */
 .text-sm      { font-size: 0.875rem; }
 .text-xs      { font-size: 0.75rem; }
 .text-lg      { font-size: 1.125rem; }
@@ -53,48 +74,53 @@
 .text-center  { text-align: center; }
 .text-right   { text-align: right; }
 .uppercase    { text-transform: uppercase; letter-spacing: 0.06em; }
+.font-mono    { font-family: var(--font-mono); }
 
-/* Spacing */
+/* ── Spacing ─────────────────────────────────────────────── */
 .mt-1 { margin-top: var(--sp-1); }
 .mt-2 { margin-top: var(--sp-2); }
 .mt-3 { margin-top: var(--sp-3); }
 .mt-4 { margin-top: var(--sp-4); }
 .mt-5 { margin-top: var(--sp-5); }
 .mt-6 { margin-top: var(--sp-6); }
+.mb-1 { margin-bottom: var(--sp-1); }
 .mb-2 { margin-bottom: var(--sp-2); }
+.mb-3 { margin-bottom: var(--sp-3); }
 .mb-4 { margin-bottom: var(--sp-4); }
 .mb-5 { margin-bottom: var(--sp-5); }
 .mb-6 { margin-bottom: var(--sp-6); }
 .ml-auto { margin-left: auto; }
 .mr-auto { margin-right: auto; }
 
-/* Width/Height */
-.w-full  { width: 100%; }
-.h-full  { height: 100%; }
+/* ── Width / Height ──────────────────────────────────────── */
+.w-full       { width: 100%; }
+.h-full       { height: 100%; }
 .min-h-screen { min-height: 100vh; }
+.max-w-full   { max-width: 100%; }
 
-/* Position */
+/* ── Position ────────────────────────────────────────────── */
 .relative { position: relative; }
 .absolute { position: absolute; }
 .fixed    { position: fixed; }
 
-/* Overflow */
+/* ── Overflow ────────────────────────────────────────────── */
 .overflow-hidden { overflow: hidden; }
 .overflow-auto   { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
 
-/* Border */
-.rounded     { border-radius: var(--radius-md); }
-.rounded-lg  { border-radius: var(--radius-lg); }
-.rounded-full{ border-radius: var(--radius-full); }
-.border      { border: 1px solid var(--clr-border); }
+/* ── Border ──────────────────────────────────────────────── */
+.rounded      { border-radius: var(--radius-md); }
+.rounded-lg   { border-radius: var(--radius-lg); }
+.rounded-full { border-radius: var(--radius-full); }
+.border       { border: 1px solid var(--clr-border); }
 
-/* Background */
-.bg-surface  { background: var(--clr-surface); }
-.bg-primary  { background: var(--clr-primary); color: #fff; }
-.bg-muted    { background: var(--clr-bg); }
+/* ── Background ──────────────────────────────────────────── */
+.bg-surface { background: var(--clr-surface); }
+.bg-primary { background: var(--clr-primary); color: #fff; }
+.bg-muted   { background: var(--clr-bg); }
 
-/* Cursor */
+/* ── Cursor ──────────────────────────────────────────────── */
 .cursor-pointer { cursor: pointer; }
 
-/* Loading state */
+/* ── Loading state ───────────────────────────────────────── */
 .is-loading { pointer-events: none; opacity: .7; }
