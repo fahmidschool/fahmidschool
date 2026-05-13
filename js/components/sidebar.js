@@ -1,17 +1,15 @@
 // ============================================================
-// sidebar.js — Sidebar component builder
+// sidebar.js — Sidebar component
 // ============================================================
 
-import { authService } from '../auth.js';
-import { store }       from '../store.js';
-import { router }      from '../router.js';
+import { store } from '../store.js';
 
 export function buildSidebar({ containerId, navItems, role }) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
   const profile    = store.get('profile') || {};
-  const initials   = _getInitials(profile.displayName || profile.name || 'U');
+  const initials   = _getInitials(profile.displayName || profile.name || profile.surname || 'U');
   const isCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
 
   container.innerHTML = `
@@ -32,7 +30,9 @@ export function buildSidebar({ containerId, navItems, role }) {
         <div class="sidebar-user" id="sidebar-user">
           <div class="user-avatar">${initials}</div>
           <div class="sidebar-user-info">
-            <div class="user-name">${profile.displayName || profile.name || 'User'}</div>
+            <div class="user-name">
+              ${profile.displayName || (profile.surname ? profile.surname + ' ' + profile.firstName : 'User')}
+            </div>
             <div class="user-role">${role}</div>
           </div>
         </div>
@@ -40,66 +40,118 @@ export function buildSidebar({ containerId, navItems, role }) {
     </aside>
   `;
 
-  _attachListeners();
+  // Highlight active nav item now and on every route change
   _highlightActive();
-
   window.addEventListener('hashchange', _highlightActive);
+
+  // Attach toggle logic AFTER sidebar HTML is in the DOM
+  _attachToggle();
 }
 
+// ── Build nav HTML ──────────────────────────────────────────
 function _buildNavHTML(navItems) {
   return navItems.map(section => `
     <div class="nav-section">
-      ${section.label ? `<div class="nav-section-label">${section.label}</div>` : ''}
+      ${section.label
+        ? `<div class="nav-section-label">${section.label}</div>`
+        : ''
+      }
       ${section.items.map(item => `
-        <a class="nav-item" data-route="${item.route}" href="#${item.route}" title="${item.label}">
-          <span class="nav-icon"><i class="ph-bold ${item.icon}" style="font-size:18px;"></i></span>
+        <a class="nav-item"
+           data-route="${item.route}"
+           href="#${item.route}"
+           title="${item.label}">
+          <span class="nav-icon">
+            <i class="ph-bold ${item.icon}" style="font-size:18px;"></i>
+          </span>
           <span class="nav-label">${item.label}</span>
-          ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+          ${item.badge
+            ? `<span class="nav-badge">${item.badge}</span>`
+            : ''
+          }
         </a>
       `).join('')}
     </div>
   `).join('');
 }
 
+// ── Highlight active nav item ───────────────────────────────
 function _highlightActive() {
   const hash = window.location.hash.slice(1) || '/';
   document.querySelectorAll('.nav-item').forEach(el => {
-    const route = el.dataset.route;
-    el.classList.toggle('active', hash === route || (route !== '/' && hash.startsWith(route)));
+    const route = el.dataset.route || '';
+    const isActive = hash === route ||
+      (route !== '/' && route.length > 1 && hash.startsWith(route));
+    el.classList.toggle('active', isActive);
   });
 }
 
-function _attachListeners() {
-  // Toggle collapse
-  document.addEventListener('click', e => {
-    if (e.target.closest('#topbar-toggle')) {
-      const sidebar = document.getElementById('main-sidebar');
-      const topbar  = document.getElementById('main-topbar');
-      const content = document.getElementById('main-content');
-      const collapsed = sidebar.classList.toggle('collapsed');
-      topbar?.classList.toggle('sidebar-collapsed', collapsed);
-      content?.classList.toggle('sidebar-collapsed', collapsed);
-      localStorage.setItem('sidebar-collapsed', collapsed);
-    }
-  });
+// ── Toggle logic ────────────────────────────────────────────
+function _attachToggle() {
+  // Use document-level delegation so it works regardless of
+  // when the topbar is rendered relative to the sidebar
+  document.addEventListener('click', _handleGlobalClick);
+}
 
-  // Mobile overlay
-  document.addEventListener('click', e => {
-    if (e.target.closest('#mobile-overlay')) {
-      _closeMobile();
-    }
-    if (e.target.closest('#mobile-menu-btn')) {
-      document.getElementById('main-sidebar')?.classList.add('mobile-open');
-      document.getElementById('mobile-overlay')?.classList.add('visible');
-    }
-  });
+function _handleGlobalClick(e) {
+  // ── Sidebar collapse / expand (desktop) ──────────────────
+  if (e.target.closest('#topbar-toggle')) {
+    _toggleSidebar();
+    return;
+  }
+
+  // ── Mobile: open sidebar via hamburger ───────────────────
+  if (e.target.closest('#mobile-menu-btn')) {
+    _openMobile();
+    return;
+  }
+
+  // ── Mobile: close sidebar via overlay click ───────────────
+  if (e.target.closest('#mobile-overlay')) {
+    _closeMobile();
+    return;
+  }
+
+  // ── Mobile: close sidebar when a nav item is tapped ───────
+  if (e.target.closest('.nav-item')) {
+    const isMobileOpen = document.getElementById('main-sidebar')
+      ?.classList.contains('mobile-open');
+    if (isMobileOpen) _closeMobile();
+    return;
+  }
+}
+
+function _toggleSidebar() {
+  const sidebar = document.getElementById('main-sidebar');
+  const topbar  = document.getElementById('main-topbar');
+  const content = document.getElementById('main-content');
+
+  if (!sidebar) return;
+
+  const collapsed = sidebar.classList.toggle('collapsed');
+  topbar?.classList.toggle('sidebar-collapsed', collapsed);
+  content?.classList.toggle('sidebar-collapsed', collapsed);
+  localStorage.setItem('sidebar-collapsed', String(collapsed));
+}
+
+function _openMobile() {
+  document.getElementById('main-sidebar')?.classList.add('mobile-open');
+  document.getElementById('mobile-overlay')?.classList.add('visible');
+  document.body.style.overflow = 'hidden';
 }
 
 function _closeMobile() {
   document.getElementById('main-sidebar')?.classList.remove('mobile-open');
   document.getElementById('mobile-overlay')?.classList.remove('visible');
+  document.body.style.overflow = '';
 }
 
 function _getInitials(name) {
-  return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map(n => n[0] || '')
+    .join('')
+    .toUpperCase();
 }
