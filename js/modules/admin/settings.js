@@ -22,6 +22,20 @@ export default async function render(outlet) {
   } catch { /* use defaults */ }
 
   outlet.innerHTML = `
+    <style>
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--sp-5);
+        align-items: start;
+      }
+      @media (max-width: 768px) {
+        .settings-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+
     <div class="page-header">
       <div class="page-header-left">
         <h1>School Settings</h1>
@@ -29,7 +43,7 @@ export default async function render(outlet) {
       </div>
     </div>
 
-    <div class="grid" style="grid-template-columns:1fr 1fr;gap:var(--sp-5);align-items:start;">
+    <div class="settings-grid">
 
       <!-- School info -->
       <div class="card">
@@ -140,9 +154,9 @@ export default async function render(outlet) {
   document.getElementById('save-report-settings').addEventListener('click', async () => {
     try {
       await setDoc(doc(db, 'settings', SETTINGS_DOC), {
-        nextTermDate:             document.getElementById('next-term').value,
-        principalRemarkTemplate:  document.getElementById('principal-remark').value.trim(),
-        updatedAt:                serverTimestamp(),
+        nextTermDate:            document.getElementById('next-term').value,
+        principalRemarkTemplate: document.getElementById('principal-remark').value.trim(),
+        updatedAt:               serverTimestamp(),
       }, { merge: true });
       toast.success('Report card settings saved.');
     } catch { toast.error('Failed to save report settings.'); }
