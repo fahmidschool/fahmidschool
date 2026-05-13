@@ -6,9 +6,9 @@ import {
   getAllSessions, createSession, setActiveSession,
   getTermsBySession, createTerm
 } from '/js/services/sessions.js';
-import { setPageTitle }      from '/js/components/topbar.js';
+import { setPageTitle }          from '/js/components/topbar.js';
 import { openModal, closeModal } from '/js/components/modal.js';
-import { toast }             from '/js/toast.js';
+import { toast }                 from '/js/toast.js';
 
 let _sessions = [];
 let _selectedSessionId = null;
@@ -23,6 +23,20 @@ export default async function render(outlet) {
 
 function _pageHTML() {
   return `
+    <style>
+      .sessions-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: var(--sp-5);
+        align-items: start;
+      }
+      @media (max-width: 768px) {
+        .sessions-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+
     <div class="page-header">
       <div class="page-header-left">
         <h1>Sessions &amp; Terms</h1>
@@ -35,7 +49,8 @@ function _pageHTML() {
       </div>
     </div>
 
-    <div class="grid" style="grid-template-columns:300px 1fr;gap:var(--sp-5);align-items:start;">
+    <div class="sessions-grid">
+
       <!-- Sessions list -->
       <div class="card">
         <div class="card-header"><div class="card-title">Sessions</div></div>
@@ -44,13 +59,20 @@ function _pageHTML() {
             ? '<p class="text-muted text-sm">No sessions yet.</p>'
             : _sessions.map(s => `
                 <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
-                  <div>
-                    <div class="font-semibold cursor-pointer session-select" data-id="${s.id}">${s.name}</div>
+                  <div style="min-width:0;">
+                    <div class="font-semibold cursor-pointer session-select" data-id="${s.id}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
                     ${s.isActive ? '<span class="badge badge-success" style="margin-top:4px;">Active</span>' : ''}
                   </div>
-                  <div class="flex gap-1">
-                    ${!s.isActive ? `<button class="btn btn-ghost btn-sm activate-session-btn" data-id="${s.id}" title="Set Active"><i class="ph-bold ph-check-circle"></i></button>` : ''}
-                    <button class="btn btn-ghost btn-sm session-select" data-id="${s.id}" title="View Terms"><i class="ph-bold ph-list"></i></button>
+                  <div class="flex gap-1" style="flex-shrink:0;">
+                    ${!s.isActive
+                      ? `<button class="btn btn-ghost btn-sm activate-session-btn" data-id="${s.id}" title="Set Active">
+                           <i class="ph-bold ph-check-circle"></i>
+                         </button>`
+                      : ''
+                    }
+                    <button class="btn btn-ghost btn-sm session-select" data-id="${s.id}" title="View Terms">
+                      <i class="ph-bold ph-list"></i>
+                    </button>
                   </div>
                 </div>
               `).join('')
@@ -64,6 +86,7 @@ function _pageHTML() {
           Select a session to manage its terms.
         </div>
       </div>
+
     </div>
   `;
 }
@@ -84,11 +107,16 @@ function _termsHTML(session) {
         ? '<p class="text-muted text-sm">No terms for this session.</p>'
         : _terms.map(t => `
             <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
-              <div>
+              <div style="min-width:0;">
                 <div class="font-semibold">${t.name}</div>
                 <div class="text-xs text-muted">${t.startDate || ''} — ${t.endDate || ''}</div>
               </div>
-              ${t.isActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-neutral">Inactive</span>'}
+              <div style="flex-shrink:0;">
+                ${t.isActive
+                  ? '<span class="badge badge-success">Active</span>'
+                  : '<span class="badge badge-neutral">Inactive</span>'
+                }
+              </div>
             </div>
           `).join('')
       }
@@ -113,10 +141,7 @@ function _attachListeners() {
     btn.addEventListener('click', async () => {
       try {
         await setActiveSession(btn.dataset.id);
-        _sessions = await getAllSessions();
-        document.getElementById('sessions-list').innerHTML = document.getElementById('sessions-list').innerHTML; // re-render
         toast.success('Session set as active.');
-        document.querySelector('.app-shell').innerHTML = ''; // force re-render
         window.location.reload();
       } catch { toast.error('Failed to activate session.'); }
     });
@@ -160,7 +185,7 @@ function _openSessionModal() {
       _sessions.unshift({ id, name, startYear: Number(start), endYear: Number(end), isActive: false });
       closeModal();
       toast.success('Session created.');
-      document.getElementById('sessions-list').innerHTML = document.getElementById('sessions-list').innerHTML;
+      window.location.reload();
     } catch { toast.error('Failed to create session.'); }
   });
 }
@@ -207,11 +232,16 @@ function _openTermModal(session) {
       toast.success('Term added.');
       document.getElementById('terms-list').innerHTML = _terms.map(t => `
         <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
-          <div>
+          <div style="min-width:0;">
             <div class="font-semibold">${t.name}</div>
             <div class="text-xs text-muted">${t.startDate || ''} — ${t.endDate || ''}</div>
           </div>
-          ${t.isActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-neutral">Inactive</span>'}
+          <div style="flex-shrink:0;">
+            ${t.isActive
+              ? '<span class="badge badge-success">Active</span>'
+              : '<span class="badge badge-neutral">Inactive</span>'
+            }
+          </div>
         </div>
       `).join('');
     } catch { toast.error('Failed to add term.'); }
