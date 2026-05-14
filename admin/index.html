@@ -15,13 +15,10 @@
 </head>
 <body>
 
-<!-- Mobile overlay -->
 <div class="mobile-overlay" id="mobile-overlay"></div>
 
-<!-- App Shell -->
 <div class="app-shell">
   <div id="sidebar-container"></div>
-
   <div class="main-content" id="main-content">
     <div id="topbar-container"></div>
     <div id="page-outlet"></div>
@@ -51,27 +48,25 @@
     {
       label: 'School',
       items: [
-        { route: '/classes',       label: 'Classes',          icon: 'ph-chalkboard' },
-        { route: '/subjects',      label: 'Subjects',         icon: 'ph-books' },
-        { route: '/timetable',     label: 'Timetable',        icon: 'ph-calendar-dots' },
-        { route: '/sessions',      label: 'Sessions & Terms', icon: 'ph-calendar' },
+        { route: '/classes',       label: 'Classes',   icon: 'ph-chalkboard' },
+        { route: '/subjects',      label: 'Subjects',  icon: 'ph-books' },
+        { route: '/timetable',     label: 'Timetable', icon: 'ph-calendar-dots' },
       ]
     },
     {
       label: 'People',
       items: [
-        { route: '/pupils',        label: 'Pupils',         icon: 'ph-student' },
-        { route: '/teachers',      label: 'Teachers',       icon: 'ph-chalkboard-teacher' },
-        { route: '/promotions',    label: 'Promotions',     icon: 'ph-arrow-up-right' },
+        { route: '/pupils',        label: 'Pupils',      icon: 'ph-student' },
+        { route: '/teachers',      label: 'Teachers',    icon: 'ph-chalkboard-teacher' },
+        { route: '/promotions',    label: 'Promotions',  icon: 'ph-arrow-up-right' },
       ]
     },
     {
       label: 'Academics',
       items: [
-        { route: '/results',       label: 'Results',        icon: 'ph-medal' },
-        { route: '/broadsheet',    label: 'Broadsheet',     icon: 'ph-table' },
-        { route: '/attendance',    label: 'Attendance',     icon: 'ph-user-check' },
-        { route: '/lessons',       label: 'Lesson Notes',   icon: 'ph-book-open' },
+        { route: '/results',       label: 'Results',     icon: 'ph-medal' },
+        { route: '/broadsheet',    label: 'Broadsheet',  icon: 'ph-table' },
+        { route: '/lessons',       label: 'Lesson Notes', icon: 'ph-book-open' },
       ]
     },
     {
@@ -85,8 +80,8 @@
     {
       label: 'System',
       items: [
-        { route: '/reports',       label: 'Reports',        icon: 'ph-chart-bar' },
-        { route: '/settings',      label: 'Settings',       icon: 'ph-gear' },
+        { route: '/reports',       label: 'Reports',  icon: 'ph-chart-bar' },
+        { route: '/settings',      label: 'Settings', icon: 'ph-gear' },
       ]
     },
   ];
@@ -103,11 +98,9 @@
   router.register('/subjects',      () => import('/js/modules/admin/subjects.js'));
   router.register('/results',       () => import('/js/modules/admin/results.js'));
   router.register('/broadsheet',    () => import('/js/modules/admin/broadsheet.js'));
-  router.register('/attendance',    () => import('/js/modules/admin/attendance.js'));
   router.register('/fees',          () => import('/js/modules/admin/fees.js'));
   router.register('/payments',      () => import('/js/modules/admin/payments.js'));
   router.register('/arrears',       () => import('/js/modules/admin/arrears.js'));
-  router.register('/sessions',      () => import('/js/modules/admin/sessions.js'));
   router.register('/promotions',    () => import('/js/modules/admin/promotions.js'));
   router.register('/timetable',     () => import('/js/modules/admin/timetable.js'));
   router.register('/announcements', () => import('/js/modules/admin/announcements.js'));
