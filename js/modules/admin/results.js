@@ -1,37 +1,39 @@
 // ============================================================
-// admin/results.js — Results entry and management module
+// admin/results.js — Read-only results viewer with print
 // ============================================================
 
-import { getResults, saveResult, updateResultStatus, computeGrade, computeTotal } from '/js/services/results.js';
-import { getAllClasses }     from '/js/services/classes.js';
-import { getSubjectsByClass }from '/js/services/subjects.js';
-import { getPupilsByClass }  from '/js/services/pupils.js';
-import { getAllSessions, getTermsBySession } from '/js/services/sessions.js';
-import { setPageTitle }      from '/js/components/topbar.js';
-import { toast }             from '/js/toast.js';
+import { getResults, computeGrade }          from '/js/services/results.js';
+import { getAllClasses }                      from '/js/services/classes.js';
+import { getSubjectsByClass }                from '/js/services/subjects.js';
+import { getPupilsByClass }                  from '/js/services/pupils.js';
+import { getAllSessions, getTermsBySession }  from '/js/services/sessions.js';
+import { setPageTitle }                      from '/js/components/topbar.js';
+import { openModal, closeModal }             from '/js/components/modal.js';
+import { printReportCard, printClassResults } from '/js/print.js';
+import { toast }                             from '/js/toast.js';
 
 let _classes  = [];
 let _sessions = [];
-let _selected = { sessionId: '', termId: '', classId: '' };
 let _subjects = [];
 let _pupils   = [];
 let _results  = [];
+let _selected = { sessionId: '', termId: '', classId: '' };
+let _sessionName = '';
+let _termName    = '';
+let _className   = '';
 
 export default async function render(outlet) {
   setPageTitle('Results');
-  outlet.innerHTML = '';
-
   [_classes, _sessions] = await Promise.all([getAllClasses(), getAllSessions()]);
 
   outlet.innerHTML = `
     <div class="page-header">
       <div class="page-header-left">
-        <h1>Results Management</h1>
-        <p>Enter, review, and publish pupil results</p>
+        <h1>Results</h1>
+        <p>View and print pupil results by class and term</p>
       </div>
     </div>
 
-    <!-- Filters -->
     <div class="card mb-5">
       <div class="form-row cols-3" style="align-items:flex-end;">
         <div class="form-group" style="margin-bottom:0;">
@@ -63,8 +65,10 @@ export default async function render(outlet) {
     <div id="results-area"></div>
   `;
 
-  document.getElementById('res-session').addEventListener('change', async (e) => {
+  document.getElementById('res-session').addEventListener('change', async e => {
     _selected.sessionId = e.target.value;
+    const sel = e.target;
+    _sessionName = sel.options[sel.selectedIndex]?.text || '';
     const terms = await getTermsBySession(e.target.value);
     const termSel = document.getElementById('res-term');
     termSel.innerHTML = `<option value="">Select Term</option>` +
@@ -72,13 +76,22 @@ export default async function render(outlet) {
     termSel.disabled = false;
   });
 
-  document.getElementById('res-term').addEventListener('change', e => { _selected.termId = e.target.value; });
-  document.getElementById('res-class').addEventListener('change', e => { _selected.classId = e.target.value; });
+  document.getElementById('res-term').addEventListener('change', e => {
+    _selected.termId = e.target.value;
+    const sel = e.target;
+    _termName = sel.options[sel.selectedIndex]?.text || '';
+  });
 
-  document.getElementById('load-results-btn').addEventListener('click', _loadResultsGrid);
+  document.getElementById('res-class').addEventListener('change', e => {
+    _selected.classId = e.target.value;
+    const sel = e.target;
+    _className = sel.options[sel.selectedIndex]?.text || '';
+  });
+
+  document.getElementById('load-results-btn').addEventListener('click', _loadResults);
 }
 
-async function _loadResultsGrid() {
+async function _loadResults() {
   const { sessionId, termId, classId } = _selected;
   if (!sessionId || !termId || !classId) {
     toast.warning('Please select session, term, and class first.');
@@ -86,7 +99,7 @@ async function _loadResultsGrid() {
   }
 
   const area = document.getElementById('results-area');
-  area.innerHTML = `<div class="card"><div class="text-center text-muted"><span class="spinner spinner-dark"></span> Loading results...</div></div>`;
+  area.innerHTML = `<div class="card"><div class="text-center text-muted"><span class="spinner spinner-dark"></span> Loading...</div></div>`;
 
   try {
     [_subjects, _pupils, _results] = await Promise.all([
@@ -95,69 +108,78 @@ async function _loadResultsGrid() {
       getResults(_selected),
     ]);
 
-    const resultsMap = {};
-    _results.forEach(r => {
-      resultsMap[`${r.pupilId}_${r.subjectId}`] = r;
+    if (_pupils.length === 0) {
+      area.innerHTML = `<div class="card text-center text-muted" style="padding:var(--sp-10);">No pupils found in this class.</div>`;
+      return;
+    }
+
+    // Build result map and compute per-pupil summaries
+    const rMap = {};
+    _results.forEach(r => { rMap[`${r.pupilId}_${r.subjectId}`] = r; });
+
+    const pupilRows = _pupils.map(p => {
+      const scored   = _subjects.map(s => rMap[`${p.id}_${s.id}`]).filter(Boolean);
+      const totalSum = scored.reduce((a, r) => a + (r.total || 0), 0);
+      const average  = scored.length ? Math.round(totalSum / scored.length) : 0;
+      const { grade } = computeGrade(average);
+      return { ...p, totalSum, average, grade, scored: scored.length };
     });
+
+    // Sort by total descending for position
+    pupilRows.sort((a, b) => b.totalSum - a.totalSum);
+    pupilRows.forEach((p, i) => { p.position = i + 1; });
 
     area.innerHTML = `
       <div class="card" style="padding:0;overflow:hidden;">
         <div class="card-header" style="padding:var(--sp-5);">
-          <div class="card-title">Results Entry Grid</div>
+          <div>
+            <div class="card-title">${_className} — Results</div>
+            <div class="card-subtitle">${_pupils.length} pupils &mdash; ${_subjects.length} subjects &mdash; ${_sessionName}, ${_termName}</div>
+          </div>
           <div class="flex gap-2">
-            <button class="btn btn-secondary btn-sm" id="publish-btn">
-              <i class="ph-bold ph-paper-plane-tilt"></i> Publish
-            </button>
-            <button class="btn btn-primary btn-sm" id="save-results-btn">
-              <i class="ph-bold ph-floppy-disk"></i> Save All
+            <button class="btn btn-secondary btn-sm" id="print-class-btn">
+              <i class="ph-bold ph-printer"></i> Print All Report Cards
             </button>
           </div>
         </div>
-
         <div style="overflow-x:auto;">
-          <table id="results-grid-table">
+          <table>
             <thead>
               <tr>
-                <th style="min-width:160px;">Pupil</th>
-                ${_subjects.map(s => `
-                  <th style="min-width:200px;" colspan="3">
-                    ${s.name}
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:4px;font-weight:400;font-size:0.7rem;">
-                      <span>CA1</span><span>CA2</span><span>Exam</span>
-                    </div>
-                  </th>
-                  <th>Total</th>
-                  <th>Grade</th>
-                `).join('')}
+                <th style="min-width:36px;">Pos.</th>
+                <th style="text-align:left;min-width:180px;">Pupil Name</th>
+                <th>Adm. No</th>
+                <th>Subjects Scored</th>
+                <th>Total</th>
+                <th>Average</th>
+                <th>Grade</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${_pupils.map(p => `
-                <tr data-pupil="${p.id}">
-                  <td class="font-semibold">${p.surname} ${p.firstName}</td>
-                  ${_subjects.map(s => {
-                    const key = `${p.id}_${s.id}`;
-                    const r   = resultsMap[key] || {};
-                    const total = r.ca1 !== undefined ? computeTotal(r) : '';
-                    const grade = total !== '' ? computeGrade(total).grade : '';
-                    return `
-                      <td colspan="3">
-                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
-                          <input type="number" class="form-control score-input" style="padding:5px 6px;font-size:0.8rem;"
-                            min="0" max="20" data-pupil="${p.id}" data-subject="${s.id}" data-field="ca1"
-                            value="${r.ca1 ?? ''}" placeholder="0" />
-                          <input type="number" class="form-control score-input" style="padding:5px 6px;font-size:0.8rem;"
-                            min="0" max="20" data-pupil="${p.id}" data-subject="${s.id}" data-field="ca2"
-                            value="${r.ca2 ?? ''}" placeholder="0" />
-                          <input type="number" class="form-control score-input" style="padding:5px 6px;font-size:0.8rem;"
-                            min="0" max="60" data-pupil="${p.id}" data-subject="${s.id}" data-field="exam"
-                            value="${r.exam ?? ''}" placeholder="0" />
-                        </div>
-                      </td>
-                      <td class="font-bold total-cell" data-pupil="${p.id}" data-subject="${s.id}">${total}</td>
-                      <td class="grade-cell" data-pupil="${p.id}" data-subject="${s.id}">${grade}</td>
-                    `;
-                  }).join('')}
+              ${pupilRows.map(p => `
+                <tr>
+                  <td style="font-weight:700;text-align:center;">
+                    ${p.position <= 3
+                      ? `<span class="badge badge-${p.position === 1 ? 'warning' : p.position === 2 ? 'neutral' : 'primary'}">${p.position}</span>`
+                      : p.position}
+                  </td>
+                  <td style="text-align:left;font-weight:600;">${p.surname} ${p.firstName}</td>
+                  <td class="text-sm text-muted">${p.admissionNumber || '—'}</td>
+                  <td class="text-center">${p.scored} / ${_subjects.length}</td>
+                  <td style="font-weight:700;">${p.totalSum}</td>
+                  <td>${p.average}%</td>
+                  <td>
+                    <span class="badge badge-${_gradeBadge(p.grade)}">${p.grade}</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm view-pupil-btn" data-id="${p.id}" title="View Details">
+                      <i class="ph-bold ph-eye"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-sm print-pupil-btn" data-id="${p.id}" title="Print Report Card">
+                      <i class="ph-bold ph-printer"></i>
+                    </button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -166,77 +188,142 @@ async function _loadResultsGrid() {
       </div>
     `;
 
-    // Live total computation
-    document.querySelectorAll('.score-input').forEach(inp => {
-      inp.addEventListener('input', () => _updateRowTotal(inp));
+    // Store sorted rows for position lookups
+    window._adminResultRows = pupilRows;
+
+    document.querySelectorAll('.view-pupil-btn').forEach(btn => {
+      btn.addEventListener('click', () => _viewPupilDetail(btn.dataset.id));
     });
 
-    document.getElementById('save-results-btn').addEventListener('click', _saveAllResults);
-    document.getElementById('publish-btn').addEventListener('click', () => _changeStatus('published'));
+    document.querySelectorAll('.print-pupil-btn').forEach(btn => {
+      btn.addEventListener('click', () => _printPupil(btn.dataset.id));
+    });
+
+    document.getElementById('print-class-btn').addEventListener('click', _printAll);
 
   } catch (err) {
     area.innerHTML = `<div class="alert alert-danger">Failed to load results. ${err.message}</div>`;
   }
 }
 
-function _updateRowTotal(inp) {
-  const { pupil, subject } = inp.dataset;
-  const inputs = document.querySelectorAll(`.score-input[data-pupil="${pupil}"][data-subject="${subject}"]`);
-  const scores = {};
-  inputs.forEach(i => { scores[i.dataset.field] = Number(i.value) || 0; });
-  const total = scores.ca1 + scores.ca2 + scores.exam;
-  const { grade } = computeGrade(total);
+function _viewPupilDetail(pupilId) {
+  const pupil   = _pupils.find(p => p.id === pupilId);
+  const rMap    = {};
+  _results.forEach(r => { rMap[`${r.pupilId}_${r.subjectId}`] = r; });
+  const posRow  = window._adminResultRows?.find(p => p.id === pupilId);
 
-  const totalEl = document.querySelector(`.total-cell[data-pupil="${pupil}"][data-subject="${subject}"]`);
-  const gradeEl = document.querySelector(`.grade-cell[data-pupil="${pupil}"][data-subject="${subject}"]`);
-  if (totalEl) totalEl.textContent = total;
-  if (gradeEl) gradeEl.textContent = grade;
+  const rows = _subjects.map(s => {
+    const r = rMap[`${pupilId}_${s.id}`];
+    if (!r) return `<tr><td>${s.name}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+    const { grade, remark } = computeGrade(r.total || 0);
+    return `<tr>
+      <td style="text-align:left;">${s.name}</td>
+      <td>${r.ca1 ?? '—'}</td>
+      <td>${r.ca2 ?? '—'}</td>
+      <td>${r.exam ?? '—'}</td>
+      <td><strong>${r.total ?? '—'}</strong></td>
+      <td><span class="badge badge-${_gradeBadge(grade)}">${grade} — ${remark}</span></td>
+    </tr>`;
+  }).join('');
+
+  openModal({
+    title: `${pupil.surname} ${pupil.firstName} — Results`,
+    size: 'lg',
+    bodyHTML: `
+      <div class="flex gap-4 mb-4 flex-wrap">
+        <div class="stat-card flex-1">
+          <div class="stat-body">
+            <div class="stat-value">${posRow?.totalSum ?? '—'}</div>
+            <div class="stat-label">Total Score</div>
+          </div>
+        </div>
+        <div class="stat-card flex-1">
+          <div class="stat-body">
+            <div class="stat-value">${posRow?.average ?? '—'}%</div>
+            <div class="stat-label">Average</div>
+          </div>
+        </div>
+        <div class="stat-card flex-1">
+          <div class="stat-body">
+            <div class="stat-value">${posRow?.position ?? '—'}</div>
+            <div class="stat-label">Position</div>
+          </div>
+        </div>
+        <div class="stat-card flex-1">
+          <div class="stat-body">
+            <div class="stat-value">${posRow?.grade ?? '—'}</div>
+            <div class="stat-label">Grade</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left;">Subject</th>
+              <th>CA 1</th><th>CA 2</th><th>Exam</th><th>Total</th><th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `,
+    footerHTML: `
+      <button class="btn btn-secondary" id="detail-print-btn">
+        <i class="ph-bold ph-printer"></i> Print Report Card
+      </button>
+      <button class="btn btn-primary" id="detail-close-btn">Close</button>
+    `,
+  });
+
+  document.getElementById('detail-close-btn').addEventListener('click', closeModal);
+  document.getElementById('detail-print-btn').addEventListener('click', () => {
+    closeModal();
+    _printPupil(pupilId);
+  });
 }
 
-async function _saveAllResults() {
-  const btn = document.getElementById('save-results-btn');
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner spinner-sm" style="border-top-color:white;"></span> Saving...`;
+async function _printPupil(pupilId) {
+  const pupil    = _pupils.find(p => p.id === pupilId);
+  const results  = _results.filter(r => r.pupilId === pupilId);
+  const posRow   = window._adminResultRows?.find(p => p.id === pupilId);
 
-  try {
-    const promises = [];
-    document.querySelectorAll('tr[data-pupil]').forEach(row => {
-      const pupilId = row.dataset.pupil;
-      _subjects.forEach(s => {
-        const ca1  = row.querySelector(`.score-input[data-pupil="${pupilId}"][data-subject="${s.id}"][data-field="ca1"]`)?.value;
-        const ca2  = row.querySelector(`.score-input[data-pupil="${pupilId}"][data-subject="${s.id}"][data-field="ca2"]`)?.value;
-        const exam = row.querySelector(`.score-input[data-pupil="${pupilId}"][data-subject="${s.id}"][data-field="exam"]`)?.value;
-
-        if (ca1 !== '' || ca2 !== '' || exam !== '') {
-          const total = (Number(ca1)||0) + (Number(ca2)||0) + (Number(exam)||0);
-          const { grade, remark } = computeGrade(total);
-          promises.push(saveResult({
-            ..._selected,
-            pupilId, subjectId: s.id,
-            ca1: Number(ca1)||0, ca2: Number(ca2)||0, exam: Number(exam)||0,
-            total, grade, remark,
-          }));
-        }
-      });
-    });
-
-    await Promise.all(promises);
-    toast.success('Results saved successfully.');
-  } catch {
-    toast.error('Failed to save some results. Please try again.');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<i class="ph-bold ph-floppy-disk"></i> Save All`;
-  }
+  await printReportCard({
+    pupil,
+    results,
+    subjects: _subjects,
+    meta: {
+      sessionName: _sessionName,
+      termName:    _termName,
+      className:   _className,
+      classSize:   _pupils.length,
+      position:    posRow?.position,
+    },
+  });
 }
 
-async function _changeStatus(status) {
-  try {
-    const ids = _results.map(r => r.id);
-    if (ids.length === 0) { toast.warning('No saved results to publish.'); return; }
-    await updateResultStatus(ids, status);
-    toast.success(`Results ${status} successfully.`);
-  } catch {
-    toast.error('Failed to update result status.');
+async function _printAll() {
+  if (_results.length === 0) {
+    toast.warning('No results to print for this class.');
+    return;
   }
+
+  await printClassResults({
+    pupils:   _pupils,
+    results:  _results,
+    subjects: _subjects,
+    meta: {
+      sessionName: _sessionName,
+      termName:    _termName,
+      className:   _className,
+    },
+  });
+}
+
+function _gradeBadge(grade) {
+  if (grade === 'A') return 'success';
+  if (grade === 'B') return 'info';
+  if (grade === 'C') return 'primary';
+  if (grade === 'D') return 'warning';
+  return 'danger';
 }
