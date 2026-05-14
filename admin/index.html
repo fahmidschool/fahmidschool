@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Portal — Fahmid School</title>
-
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js" type="module"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
   <link rel="stylesheet" href="/css/base.css" />
   <link rel="stylesheet" href="/css/layout.css" />
   <link rel="stylesheet" href="/css/components.css" />
@@ -26,7 +24,6 @@
 
   <div class="main-content" id="main-content">
     <div id="topbar-container"></div>
-    <!-- Dynamic page outlet -->
     <div id="page-outlet"></div>
   </div>
 </div>
@@ -37,14 +34,12 @@
   import { buildTopbar }   from '/js/components/topbar.js';
   import { router }        from '/js/router.js';
 
-  // ── Auth guard ────────────────────────────────────────────
   authService.onAuthChange(({ user, profile }) => {
     if (!user || profile?.role !== 'admin') {
       window.location.href = '/index.html';
     }
   });
 
-  // ── Navigation config ─────────────────────────────────────
   const NAV = [
     {
       label: 'Overview',
@@ -77,7 +72,6 @@
         { route: '/broadsheet',    label: 'Broadsheet',     icon: 'ph-table' },
         { route: '/attendance',    label: 'Attendance',     icon: 'ph-user-check' },
         { route: '/lessons',       label: 'Lesson Notes',   icon: 'ph-book-open' },
-        { route: '/cbt',           label: 'CBT Exams',      icon: 'ph-monitor-play' },
       ]
     },
     {
@@ -97,11 +91,9 @@
     },
   ];
 
-  // ── Build layout ──────────────────────────────────────────
   buildSidebar({ containerId: 'sidebar-container', navItems: NAV, role: 'Administrator' });
   buildTopbar({ containerId: 'topbar-container' });
 
-  // ── Routes ────────────────────────────────────────────────
   router.defineOutlet('#page-outlet');
 
   router.register('/dashboard',     () => import('/js/modules/admin/dashboard.js'));
@@ -117,14 +109,12 @@
   router.register('/arrears',       () => import('/js/modules/admin/arrears.js'));
   router.register('/sessions',      () => import('/js/modules/admin/sessions.js'));
   router.register('/promotions',    () => import('/js/modules/admin/promotions.js'));
-  router.register('/cbt',           () => import('/js/modules/admin/cbt.js'));
   router.register('/timetable',     () => import('/js/modules/admin/timetable.js'));
   router.register('/announcements', () => import('/js/modules/admin/announcements.js'));
   router.register('/lessons',       () => import('/js/modules/admin/lessons.js'));
   router.register('/reports',       () => import('/js/modules/admin/reports.js'));
   router.register('/settings',      () => import('/js/modules/admin/settings.js'));
 
-  // Default route
   if (!window.location.hash || window.location.hash === '#') {
     window.location.hash = '/dashboard';
   }
