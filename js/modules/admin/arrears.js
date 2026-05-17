@@ -1,23 +1,26 @@
 // ============================================================
-// admin/arrears.js — Outstanding fee arrears module
+// admin/arrears.js — Outstanding fee arrears
 // ============================================================
-
-import { getPayments }                      from '/js/services/fees.js';
-import { getAllClasses }                     from '/js/services/classes.js';
-import { getAllPupils }                      from '/js/services/pupils.js';
-import { getAllSessions, getTermsBySession } from '/js/services/sessions.js';
-import { setPageTitle }                     from '/js/components/topbar.js';
-import { toast }                            from '/js/toast.js';
+import { getArrearsReport }                         from '/js/services/fees.js';
+import { getActivePeriod, getAllSessions, getTermsBySession } from '/js/services/sessions.js';
+import { getAllClasses }                             from '/js/services/classes.js';
+import { getAllPupils }                              from '/js/services/pupils.js';
+import { setPageTitle }                             from '/js/components/topbar.js';
+import { toast }                                    from '/js/toast.js';
 
 let _sessions = [], _classes = [], _pupils = [];
+let _activePeriod = { session: null, term: null };
 let _filters  = { sessionId: '', termId: '' };
 
 export default async function render(outlet) {
-  setPageTitle('Arrears');
+  setPageTitle('Fee Arrears');
 
-  [_sessions, _classes, _pupils] = await Promise.all([
-    getAllSessions(), getAllClasses(), getAllPupils()
+  [_sessions, _classes, _pupils, _activePeriod] = await Promise.all([
+    getAllSessions(), getAllClasses(), getAllPupils(), getActivePeriod()
   ]);
+
+  _filters.sessionId = _activePeriod.session?.id || '';
+  _filters.termId    = _activePeriod.term?.id    || '';
 
   outlet.innerHTML = `
     <div class="page-header">
@@ -27,18 +30,29 @@ export default async function render(outlet) {
       </div>
     </div>
 
+    ${_activePeriod.session
+      ? `<div class="alert alert-info mb-4">
+           <i class="ph-bold ph-info"></i>
+           <span>Pre-filtered to active period: <strong>${_activePeriod.session.name}</strong>
+           ${_activePeriod.term ? ' — <strong>' + _activePeriod.term.name + '</strong>' : ''}</span>
+         </div>`
+      : ''
+    }
+
     <div class="card mb-5">
       <div class="form-row cols-3" style="align-items:flex-end;">
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Session</label>
           <select class="form-control" id="arr-session">
             <option value="">Select Session</option>
-            ${_sessions.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+            ${_sessions.map(s =>
+              `<option value="${s.id}" ${s.id === _filters.sessionId ? 'selected' : ''}>${s.name}</option>`
+            ).join('')}
           </select>
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Term</label>
-          <select class="form-control" id="arr-term" disabled>
+          <select class="form-control" id="arr-term">
             <option value="">Select Term</option>
           </select>
         </div>
@@ -57,17 +71,29 @@ export default async function render(outlet) {
     </div>
   `;
 
+  // Pre-populate terms if active session
+  if (_filters.sessionId) {
+    const terms = await getTermsBySession(_filters.sessionId);
+    const termSel = document.getElementById('arr-term');
+    termSel.innerHTML = `<option value="">Select Term</option>` +
+      terms.map(t =>
+        `<option value="${t.id}" ${t.id === _filters.termId ? 'selected' : ''}>${t.name}</option>`
+      ).join('');
+  }
+
   document.getElementById('arr-session').addEventListener('change', async e => {
     _filters.sessionId = e.target.value;
+    _filters.termId    = '';
     const terms   = await getTermsBySession(e.target.value);
     const termSel = document.getElementById('arr-term');
     termSel.innerHTML = `<option value="">Select Term</option>` +
       terms.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-    termSel.disabled = false;
   });
 
-  document.getElementById('arr-term').addEventListener('change',  e => { _filters.termId = e.target.value; });
+  document.getElementById('arr-term').addEventListener('change', e => { _filters.termId = e.target.value; });
   document.getElementById('arr-load-btn').addEventListener('click', _loadArrears);
+
+  if (_filters.sessionId && _filters.termId) await _loadArrears();
 }
 
 async function _loadArrears() {
@@ -78,16 +104,16 @@ async function _loadArrears() {
   area.innerHTML = `<div class="text-center"><span class="spinner spinner-dark"></span></div>`;
 
   try {
-    const payments = await getPayments({ sessionId, termId });
-    const arrears  = payments.filter(p => p.balance && Number(p.balance) > 0);
-
-    const totalArrears = arrears.reduce((s, p) => s + Number(p.balance), 0);
+    const arrears      = await getArrearsReport(sessionId, termId);
+    const totalArrears = arrears.reduce((s, r) => s + r.outstanding, 0);
 
     area.innerHTML = `
       <div class="stat-card mb-5">
-        <div class="stat-icon red"><i class="ph-bold ph-warning-circle" style="font-size:22px;"></i></div>
+        <div class="stat-icon red">
+          <i class="ph-bold ph-warning-circle" style="font-size:22px;"></i>
+        </div>
         <div class="stat-body">
-          <div class="stat-value">NGN ${totalArrears.toLocaleString('en-NG', {minimumFractionDigits:2})}</div>
+          <div class="stat-value">₦${totalArrears.toLocaleString('en-NG', { minimumFractionDigits: 2 })}</div>
           <div class="stat-label">Total Outstanding — ${arrears.length} cases</div>
         </div>
       </div>
@@ -99,35 +125,35 @@ async function _loadArrears() {
               <tr>
                 <th>Pupil</th>
                 <th>Class</th>
-                <th>Fee Type</th>
-                <th>Amount Paid (NGN)</th>
-                <th>Balance (NGN)</th>
-                <th>Receipt No.</th>
-                <th>Date</th>
+                <th>Total Owed (₦)</th>
+                <th>Total Paid (₦)</th>
+                <th>Outstanding (₦)</th>
+                <th>Arrears Portion (₦)</th>
               </tr>
             </thead>
             <tbody>
               ${arrears.length === 0
-                ? `<tr><td colspan="7" class="table-empty">
+                ? `<tr><td colspan="6" class="table-empty">
                     <i class="ph-bold ph-check-circle" style="font-size:36px;display:block;margin-bottom:8px;color:var(--clr-success);"></i>
                     No arrears found for this period.
                    </td></tr>`
-                : arrears.map(p => {
-                    const pupil = _pupils.find(pu => pu.id === p.pupilId);
-                    const cls   = _classes.find(c  => c.id  === p.classId);
+                : arrears.map(r => {
+                    const pupil = _pupils.find(p => p.id === r.pupilId);
+                    const cls   = _classes.find(c => c.id === r.classId);
                     return `
                       <tr>
-                        <td class="font-semibold">${p.pupilName || pupil?.surname + ' ' + pupil?.firstName || '-'}</td>
-                        <td>${cls?.name || '-'}</td>
-                        <td>${p.feeType || '-'}</td>
-                        <td>${Number(p.amount).toLocaleString('en-NG', {minimumFractionDigits:2})}</td>
+                        <td class="font-semibold">${pupil ? `${pupil.surname} ${pupil.firstName}` : r.pupilId}</td>
+                        <td>${cls?.name || '—'}</td>
+                        <td>₦${Number(r.totalOwed).toLocaleString()}</td>
+                        <td>₦${Number(r.totalPaid).toLocaleString()}</td>
                         <td>
                           <span class="font-bold text-danger">
-                            ${Number(p.balance).toLocaleString('en-NG', {minimumFractionDigits:2})}
+                            ₦${Number(r.outstanding).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
                           </span>
                         </td>
-                        <td class="text-sm" style="font-family:var(--font-mono);">${p.receiptNo}</td>
-                        <td>${p.createdAt?.toDate ? p.createdAt.toDate().toLocaleDateString('en-GB') : '-'}</td>
+                        <td>${r.arrears > 0
+                          ? `<span class="text-danger">₦${Number(r.arrears).toLocaleString()}</span>`
+                          : '—'}</td>
                       </tr>
                     `;
                   }).join('')
