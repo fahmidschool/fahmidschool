@@ -1,18 +1,17 @@
 // ============================================================
 // admin/settings.js — School settings + Sessions & Terms
 // ============================================================
-
 import {
   doc, getDoc, setDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { db }           from '/js/firebase.js';
+import { db } from '/js/firebase.js';
 import {
   getAllSessions, createSession, setActiveSession,
-  getTermsBySession, createTerm
+  getTermsBySession, createTerm, setActiveTerm
 } from '/js/services/sessions.js';
-import { setPageTitle } from '/js/components/topbar.js';
+import { setPageTitle }          from '/js/components/topbar.js';
 import { openModal, closeModal } from '/js/components/modal.js';
-import { toast }        from '/js/toast.js';
+import { toast }                 from '/js/toast.js';
 
 const SETTINGS_DOC = 'school_settings';
 
@@ -42,7 +41,7 @@ export default async function render(outlet) {
       }
       .sessions-layout {
         display: grid;
-        grid-template-columns: 280px 1fr;
+        grid-template-columns: 300px 1fr;
         gap: var(--sp-4);
         align-items: start;
       }
@@ -149,48 +148,20 @@ export default async function render(outlet) {
       </div>
 
       <div class="sessions-layout mt-4">
-
-        <!-- Sessions list -->
         <div>
           <div class="section-title mb-3">Academic Sessions</div>
-          <div id="sessions-list">
-            ${_sessions.length === 0
-              ? '<p class="text-muted text-sm">No sessions yet.</p>'
-              : _sessions.map(s => `
-                  <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
-                    <div style="min-width:0;">
-                      <div class="font-semibold cursor-pointer session-select" data-id="${s.id}"
-                           style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
-                      ${s.isActive ? '<span class="badge badge-success" style="margin-top:4px;">Active</span>' : ''}
-                    </div>
-                    <div class="flex gap-1" style="flex-shrink:0;">
-                      ${!s.isActive
-                        ? `<button class="btn btn-ghost btn-sm activate-session-btn" data-id="${s.id}" title="Set Active">
-                             <i class="ph-bold ph-check-circle"></i>
-                           </button>`
-                        : ''}
-                      <button class="btn btn-ghost btn-sm session-select" data-id="${s.id}" title="View Terms">
-                        <i class="ph-bold ph-list"></i>
-                      </button>
-                    </div>
-                  </div>
-                `).join('')
-            }
-          </div>
+          <div id="sessions-list">${_renderSessionsList()}</div>
         </div>
-
-        <!-- Terms panel -->
         <div id="terms-panel">
           <div class="text-muted text-sm" style="padding:var(--sp-4);">
             Select a session to view and manage its terms.
           </div>
         </div>
-
       </div>
     </div>
   `;
 
-  // ── Save handlers ───────────────────────────────────────────────────────────
+  // ── Save handlers ──────────────────────────────────────────────────────────
 
   document.getElementById('save-school-settings').addEventListener('click', async () => {
     try {
@@ -229,24 +200,58 @@ export default async function render(outlet) {
     } catch { toast.error('Failed to save report settings.'); }
   });
 
-  // ── Sessions & Terms handlers ───────────────────────────────────────────────
+  // ── Sessions & Terms handlers ──────────────────────────────────────────────
 
   document.getElementById('add-session-btn').addEventListener('click', _openSessionModal);
+  _attachSessionListeners();
+}
 
+// ── Render helpers ─────────────────────────────────────────
+
+function _renderSessionsList() {
+  if (_sessions.length === 0) {
+    return '<p class="text-muted text-sm">No sessions yet.</p>';
+  }
+  return _sessions.map(s => `
+    <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
+      <div style="min-width:0;">
+        <div class="font-semibold cursor-pointer session-select" data-id="${s.id}"
+             style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+        ${s.isActive ? '<span class="badge badge-success" style="margin-top:4px;">Active</span>' : ''}
+      </div>
+      <div class="flex gap-1" style="flex-shrink:0;">
+        ${!s.isActive
+          ? `<button class="btn btn-ghost btn-sm activate-session-btn" data-id="${s.id}" title="Set as Active Session">
+               <i class="ph-bold ph-check-circle"></i>
+             </button>`
+          : ''}
+        <button class="btn btn-ghost btn-sm session-select" data-id="${s.id}" title="View Terms">
+          <i class="ph-bold ph-list"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function _attachSessionListeners() {
   document.querySelectorAll('.session-select').forEach(el => {
     el.addEventListener('click', () => _loadTermsPanel(el.dataset.id));
   });
-
   document.querySelectorAll('.activate-session-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
+      if (!confirm('Set this as the active session? This will affect all users.')) return;
       try {
         await setActiveSession(btn.dataset.id);
         toast.success('Session set as active.');
-        window.location.reload();
+        _sessions = await getAllSessions();
+        document.getElementById('sessions-list').innerHTML = _renderSessionsList();
+        _attachSessionListeners();
       } catch { toast.error('Failed to activate session.'); }
     });
   });
 }
+
+// ── Terms panel ────────────────────────────────────────────
 
 async function _loadTermsPanel(sessionId) {
   _selectedSessionId = sessionId;
@@ -256,6 +261,9 @@ async function _loadTermsPanel(sessionId) {
 }
 
 function _renderTermsPanel(session) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   document.getElementById('terms-panel').innerHTML = `
     <div class="flex items-center justify-between mb-3">
       <div class="section-title">${session.name} — Terms</div>
@@ -266,25 +274,56 @@ function _renderTermsPanel(session) {
     <div id="terms-list">
       ${_terms.length === 0
         ? '<p class="text-muted text-sm">No terms for this session yet.</p>'
-        : _terms.map(t => `
-            <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
-              <div style="min-width:0;">
-                <div class="font-semibold">${t.name}</div>
-                <div class="text-xs text-muted">${t.startDate || ''} ${t.endDate ? '— ' + t.endDate : ''}</div>
+        : _terms.map(t => {
+            const start     = t.startDate ? new Date(t.startDate) : null;
+            const end       = t.endDate   ? new Date(t.endDate)   : null;
+            const inWindow  = start && end && today >= start && today <= end;
+            const dateMismatch = inWindow && !t.isActive;
+
+            return `
+              <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
+                <div style="min-width:0;flex:1;">
+                  <div class="font-semibold">${t.name}</div>
+                  <div class="text-xs text-muted">${t.startDate || '—'} to ${t.endDate || '—'}</div>
+                  ${dateMismatch ? `
+                    <div class="text-xs" style="color:var(--clr-warning);margin-top:2px;">
+                      <i class="ph-bold ph-warning"></i> Dates suggest this should be active — click Activate to confirm.
+                    </div>` : ''}
+                </div>
+                <div class="flex gap-1 items-center" style="flex-shrink:0;">
+                  ${t.isActive
+                    ? '<span class="badge badge-success">Active</span>'
+                    : `<button class="btn btn-ghost btn-sm activate-term-btn"
+                               data-id="${t.id}"
+                               data-session="${session.id}"
+                               title="Set as Active Term">
+                         <i class="ph-bold ph-check-circle"></i> Activate
+                       </button>`
+                  }
+                </div>
               </div>
-              <div style="flex-shrink:0;">
-                ${t.isActive
-                  ? '<span class="badge badge-success">Active</span>'
-                  : '<span class="badge badge-neutral">Inactive</span>'}
-              </div>
-            </div>
-          `).join('')
+            `;
+          }).join('')
       }
     </div>
   `;
 
   document.getElementById('add-term-btn').addEventListener('click', () => _openTermModal(session));
+
+  document.querySelectorAll('.activate-term-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Set this as the active term? This will affect all fee calculations and records.')) return;
+      try {
+        await setActiveTerm(btn.dataset.session, btn.dataset.id);
+        toast.success('Term set as active.');
+        _terms = await getTermsBySession(btn.dataset.session);
+        _renderTermsPanel(session);
+      } catch { toast.error('Failed to activate term.'); }
+    });
+  });
 }
+
+// ── Modals ─────────────────────────────────────────────────
 
 function _openSessionModal() {
   openModal({
@@ -323,39 +362,8 @@ function _openSessionModal() {
       closeModal();
       toast.success('Session created.');
       _sessions.unshift({ id, name, startYear: Number(start), endYear: Number(end), isActive: false });
-      // Refresh sessions list in the DOM
-      document.getElementById('sessions-list').innerHTML = _sessions.map(s => `
-        <div class="flex items-center justify-between mb-3 pb-3" style="border-bottom:1px solid var(--clr-border);">
-          <div style="min-width:0;">
-            <div class="font-semibold cursor-pointer session-select" data-id="${s.id}"
-                 style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
-            ${s.isActive ? '<span class="badge badge-success" style="margin-top:4px;">Active</span>' : ''}
-          </div>
-          <div class="flex gap-1" style="flex-shrink:0;">
-            ${!s.isActive
-              ? `<button class="btn btn-ghost btn-sm activate-session-btn" data-id="${s.id}" title="Set Active">
-                   <i class="ph-bold ph-check-circle"></i>
-                 </button>`
-              : ''}
-            <button class="btn btn-ghost btn-sm session-select" data-id="${s.id}" title="View Terms">
-              <i class="ph-bold ph-list"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
-      // Re-attach listeners for the newly rendered items
-      document.querySelectorAll('.session-select').forEach(el => {
-        el.addEventListener('click', () => _loadTermsPanel(el.dataset.id));
-      });
-      document.querySelectorAll('.activate-session-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          try {
-            await setActiveSession(btn.dataset.id);
-            toast.success('Session set as active.');
-            window.location.reload();
-          } catch { toast.error('Failed to activate session.'); }
-        });
-      });
+      document.getElementById('sessions-list').innerHTML = _renderSessionsList();
+      _attachSessionListeners();
     } catch { toast.error('Failed to create session.'); }
   });
 }
@@ -383,6 +391,10 @@ function _openTermModal(session) {
           <input type="date" class="form-control" id="term-end" />
         </div>
       </div>
+      <div class="alert alert-info mt-3">
+        <i class="ph-bold ph-info"></i>
+        <span>After creating, click "Activate" on the term when it begins. The system will alert you if a term's dates suggest it should be active.</span>
+      </div>
     `,
     footerHTML: `
       <button class="btn btn-secondary" id="term-cancel">Cancel</button>
@@ -395,12 +407,13 @@ function _openTermModal(session) {
     const name  = document.getElementById('term-name').value;
     const start = document.getElementById('term-start').value;
     const end   = document.getElementById('term-end').value;
+    const order = { 'First Term': 1, 'Second Term': 2, 'Third Term': 3 }[name] || _terms.length + 1;
     try {
       const id = await createTerm({
         name, startDate: start, endDate: end,
-        sessionId: session.id, order: _terms.length + 1,
+        sessionId: session.id, order,
       });
-      _terms.push({ id, name, startDate: start, endDate: end, sessionId: session.id, isActive: false });
+      _terms.push({ id, name, startDate: start, endDate: end, sessionId: session.id, isActive: false, order });
       closeModal();
       toast.success('Term added.');
       _renderTermsPanel(session);
